@@ -1,0 +1,11 @@
+{
+  "domain": "universal_modbus",
+  "name": "Universal Modbus",
+  "codeowners": ["@Idelmaeaen"],
+  "config_flow": true,
+  "documentation": "https://github.com/Idelmaeaen/HA-Universal-Modbus",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "requirements": ["pymodbus>=3.8.0,<4.0.0"],
+  "version": "0.1.0"
+}

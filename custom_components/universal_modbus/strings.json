@@ -1,0 +1,33 @@
+{
+  "title": "Universal Modbus",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add Modbus TCP device",
+        "data": {
+          "name": "Device name",
+          "host": "Host",
+          "port": "Port",
+          "slave": "Unit ID",
+          "scan_interval": "Scan interval",
+          "timeout": "Timeout"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {"title": "Manage device profile"},
+      "import_profile": {
+        "title": "Import profile",
+        "description": "Paste the complete JSON profile.",
+        "data": {"profile_json": "Profile JSON"}
+      },
+      "clear_entities": {
+        "title": "Clear imported variables",
+        "data": {"confirm": "Confirm"}
+      }
+    },
+    "error": {"invalid_profile": "The profile is invalid or uses an unsupported schema version."}
+  }
+}

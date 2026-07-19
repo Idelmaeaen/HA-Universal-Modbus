@@ -1,0 +1,15 @@
+export_profile:
+  name: Export profile
+  description: Export the current Modbus entity profile as a reusable JSON file.
+  fields:
+    entry_id:
+      name: Config entry ID
+      required: true
+      selector:
+        text:
+    filename:
+      name: Filename
+      required: false
+      example: siemens_logo_water.json
+      selector:
+        text:

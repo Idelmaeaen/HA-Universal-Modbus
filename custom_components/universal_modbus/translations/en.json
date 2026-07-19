@@ -1,0 +1,205 @@
+{
+  "title": "Universal Modbus",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add Modbus TCP device",
+        "data": {
+          "name": "Device name",
+          "host": "Host",
+          "port": "Port",
+          "slave": "Unit ID",
+          "scan_interval": "Scan interval",
+          "timeout": "Timeout"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Universal Modbus",
+        "description": "Manufacturer: {manufacturer}\nModel: {model}\nDescription: {description}\n\n[Open this hub in the Universal Modbus settings](/universal-modbus?config_entry={config_entry}).",
+        "menu_options": {
+          "profile_info": "Edit profile information",
+          "manage_entities": "Manage entities",
+          "import_profile": "Import profile",
+          "export_profile": "Export profile"
+        }
+      },
+      "profile_info": {
+        "title": "Profile information",
+        "data": {
+          "profile_name": "Profile name",
+          "manufacturer": "Manufacturer",
+          "model": "Model",
+          "description": "Description",
+          "byte_order": "Hub byte order",
+          "word_order": "Hub word order"
+        }
+      },
+      "manage_entities": {
+        "title": "Manage entities",
+        "description": "Configured entities:\n\n{entities}",
+        "menu_options": {
+          "add_entity": "Add entity",
+          "edit_entity_select": "Edit entity",
+          "delete_entity_select": "Delete entity"
+        }
+      },
+      "add_entity": {
+        "title": "Add entity",
+        "description": "Create a Modbus-backed Home Assistant entity.",
+        "data": {
+          "name": "Name",
+          "platform": "Entity type",
+          "table": "Register area",
+          "data_type": "Data type",
+          "count": "Register count",
+          "scale": "Scale",
+          "offset": "Offset",
+          "unit": "Unit",
+          "icon": "Icon",
+          "display_precision": "Displayed decimal places",
+          "device_class": "Device class",
+          "state_class": "State class",
+          "feedback_table": "Feedback source",
+          "command_on": "On command",
+          "command_off": "Off command",
+          "pulse_ms": "Pulse duration (ms)",
+          "minimum": "Minimum",
+          "maximum": "Maximum",
+          "step": "Step",
+          "options_json": "Select options as JSON",
+          "register": "Register",
+          "feedback_register": "Feedback register"
+        }
+      },
+      "add_entity_details": {
+        "title": "Entity details",
+        "description": "Only fields relevant to the selected entity type are shown.",
+        "data": {
+          "name": "Name",
+          "platform": "Entity type",
+          "table": "Register area",
+          "data_type": "Data type",
+          "count": "Register count",
+          "scale": "Scale",
+          "offset": "Offset",
+          "unit": "Unit",
+          "icon": "Icon",
+          "display_precision": "Displayed decimal places",
+          "device_class": "Device class",
+          "state_class": "State class",
+          "feedback_table": "Feedback source",
+          "command_on": "On command",
+          "command_off": "Off command",
+          "pulse_ms": "Pulse duration (ms)",
+          "minimum": "Minimum",
+          "maximum": "Maximum",
+          "step": "Step",
+          "options_json": "Select options as JSON",
+          "register": "Register",
+          "feedback_register": "Feedback register"
+        }
+      },
+      "edit_entity_select": {
+        "title": "Select entity",
+        "data": {
+          "entity_key": "Entity"
+        }
+      },
+      "edit_entity": {
+        "title": "Edit entity",
+        "data": {
+          "name": "Name",
+          "platform": "Entity type",
+          "table": "Register area",
+          "data_type": "Data type",
+          "count": "Register count",
+          "scale": "Scale",
+          "offset": "Offset",
+          "unit": "Unit",
+          "icon": "Icon",
+          "display_precision": "Displayed decimal places",
+          "device_class": "Device class",
+          "state_class": "State class",
+          "feedback_table": "Feedback source",
+          "command_on": "On command",
+          "command_off": "Off command",
+          "pulse_ms": "Pulse duration (ms)",
+          "minimum": "Minimum",
+          "maximum": "Maximum",
+          "step": "Step",
+          "options_json": "Select options as JSON",
+          "register": "Register",
+          "feedback_register": "Feedback register"
+        }
+      },
+      "edit_entity_details": {
+        "title": "Edit entity details",
+        "description": "Only fields relevant to the selected entity type are shown.",
+        "data": {
+          "name": "Name",
+          "platform": "Entity type",
+          "table": "Register area",
+          "data_type": "Data type",
+          "count": "Register count",
+          "scale": "Scale",
+          "offset": "Offset",
+          "unit": "Unit",
+          "icon": "Icon",
+          "display_precision": "Displayed decimal places",
+          "device_class": "Device class",
+          "state_class": "State class",
+          "feedback_table": "Feedback source",
+          "command_on": "On command",
+          "command_off": "Off command",
+          "pulse_ms": "Pulse duration (ms)",
+          "minimum": "Minimum",
+          "maximum": "Maximum",
+          "step": "Step",
+          "options_json": "Select options as JSON",
+          "register": "Register",
+          "feedback_register": "Feedback register"
+        }
+      },
+      "delete_entity_select": {
+        "title": "Select entity",
+        "data": {
+          "entity_key": "Entity"
+        }
+      },
+      "delete_entity": {
+        "title": "Delete entity",
+        "description": "Delete {entity}?",
+        "data": {
+          "confirm": "Confirm deletion"
+        }
+      },
+      "import_profile": {
+        "title": "Import profile",
+        "description": "Paste the complete JSON profile.",
+        "data": {
+          "profile_json": "Profile JSON"
+        }
+      },
+      "export_profile": {
+        "title": "Export profile",
+        "description": "Copy the complete JSON profile from this field.",
+        "data": {
+          "profile_json": "Profile JSON"
+        }
+      }
+    },
+    "error": {
+      "invalid_profile": "The profile is invalid or uses an unsupported schema version.",
+      "invalid_entity": "The entity definition is invalid. Check platform-specific values and JSON options.",
+      "duplicate_key": "This unique key is already in use."
+    },
+    "abort": {
+      "no_entities": "No entities are configured.",
+      "entity_not_found": "The selected entity no longer exists."
+    }
+  }
+}

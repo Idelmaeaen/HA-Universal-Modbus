@@ -1,0 +1,205 @@
+{
+  "title": "Universal Modbus",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Modbus-TCP-Gerät hinzufügen",
+        "data": {
+          "name": "Gerätename",
+          "host": "Host",
+          "port": "Port",
+          "slave": "Unit-ID",
+          "scan_interval": "Abfrageintervall",
+          "timeout": "Zeitüberschreitung"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Universal Modbus",
+        "description": "Hersteller: {manufacturer}\nModell: {model}\nBeschreibung: {description}\n\n[Diesen Hub in den Universal-Modbus-Einstellungen \u00f6ffnen](/universal-modbus?config_entry={config_entry}).",
+        "menu_options": {
+          "profile_info": "Profilinformationen bearbeiten",
+          "manage_entities": "Entitäten bearbeiten",
+          "import_profile": "Profil importieren",
+          "export_profile": "Profil exportieren"
+        }
+      },
+      "profile_info": {
+        "title": "Profilinformationen",
+        "data": {
+          "profile_name": "Profilname",
+          "manufacturer": "Hersteller",
+          "model": "Modell",
+          "description": "Beschreibung",
+          "byte_order": "Byte-Reihenfolge des Hubs",
+          "word_order": "Wort-Reihenfolge des Hubs"
+        }
+      },
+      "manage_entities": {
+        "title": "Entitäten bearbeiten",
+        "description": "Konfigurierte Entitäten:\n\n{entities}",
+        "menu_options": {
+          "add_entity": "Entität hinzufügen",
+          "edit_entity_select": "Entität bearbeiten",
+          "delete_entity_select": "Entität löschen"
+        }
+      },
+      "add_entity": {
+        "title": "Entität hinzufügen",
+        "description": "Erstellt eine Home-Assistant-Entität auf Basis eines Modbus-Werts.",
+        "data": {
+          "name": "Name",
+          "platform": "Entitätstyp",
+          "table": "Bereich",
+          "data_type": "Datentyp",
+          "count": "Registeranzahl",
+          "scale": "Skalierung",
+          "offset": "Offset",
+          "unit": "Einheit",
+          "icon": "Icon",
+          "display_precision": "Angezeigte Dezimalstellen",
+          "device_class": "Geräteklasse",
+          "state_class": "Zustandsklasse",
+          "feedback_table": "Rückmeldung",
+          "command_on": "Einschaltwert",
+          "command_off": "Ausschaltwert",
+          "pulse_ms": "Impulsdauer (ms)",
+          "minimum": "Minimum",
+          "maximum": "Maximum",
+          "step": "Schrittweite",
+          "options_json": "Select-Optionen als JSON",
+          "register": "Register",
+          "feedback_register": "Rückmelderegister"
+        }
+      },
+      "add_entity_details": {
+        "title": "Entitätsdetails",
+        "description": "Es werden nur die für den gewählten Entitätstyp relevanten Felder angezeigt.",
+        "data": {
+          "name": "Name",
+          "platform": "Entitätstyp",
+          "table": "Bereich",
+          "data_type": "Datentyp",
+          "count": "Registeranzahl",
+          "scale": "Skalierung",
+          "offset": "Offset",
+          "unit": "Einheit",
+          "icon": "Icon",
+          "display_precision": "Angezeigte Dezimalstellen",
+          "device_class": "Geräteklasse",
+          "state_class": "Zustandsklasse",
+          "feedback_table": "Rückmeldung",
+          "command_on": "Einschaltwert",
+          "command_off": "Ausschaltwert",
+          "pulse_ms": "Impulsdauer (ms)",
+          "minimum": "Minimum",
+          "maximum": "Maximum",
+          "step": "Schrittweite",
+          "options_json": "Select-Optionen als JSON",
+          "register": "Register",
+          "feedback_register": "Rückmelderegister"
+        }
+      },
+      "edit_entity_select": {
+        "title": "Entität auswählen",
+        "data": {
+          "entity_key": "Entität"
+        }
+      },
+      "edit_entity": {
+        "title": "Entität bearbeiten",
+        "data": {
+          "name": "Name",
+          "platform": "Entitätstyp",
+          "table": "Bereich",
+          "data_type": "Datentyp",
+          "count": "Registeranzahl",
+          "scale": "Skalierung",
+          "offset": "Offset",
+          "unit": "Einheit",
+          "icon": "Icon",
+          "display_precision": "Angezeigte Dezimalstellen",
+          "device_class": "Geräteklasse",
+          "state_class": "Zustandsklasse",
+          "feedback_table": "Rückmeldung",
+          "command_on": "Einschaltwert",
+          "command_off": "Ausschaltwert",
+          "pulse_ms": "Impulsdauer (ms)",
+          "minimum": "Minimum",
+          "maximum": "Maximum",
+          "step": "Schrittweite",
+          "options_json": "Select-Optionen als JSON",
+          "register": "Register",
+          "feedback_register": "Rückmelderegister"
+        }
+      },
+      "edit_entity_details": {
+        "title": "Entitätsdetails bearbeiten",
+        "description": "Es werden nur die für den gewählten Entitätstyp relevanten Felder angezeigt.",
+        "data": {
+          "name": "Name",
+          "platform": "Entitätstyp",
+          "table": "Bereich",
+          "data_type": "Datentyp",
+          "count": "Registeranzahl",
+          "scale": "Skalierung",
+          "offset": "Offset",
+          "unit": "Einheit",
+          "icon": "Icon",
+          "display_precision": "Angezeigte Dezimalstellen",
+          "device_class": "Geräteklasse",
+          "state_class": "Zustandsklasse",
+          "feedback_table": "Rückmeldung",
+          "command_on": "Einschaltwert",
+          "command_off": "Ausschaltwert",
+          "pulse_ms": "Impulsdauer (ms)",
+          "minimum": "Minimum",
+          "maximum": "Maximum",
+          "step": "Schrittweite",
+          "options_json": "Select-Optionen als JSON",
+          "register": "Register",
+          "feedback_register": "Rückmelderegister"
+        }
+      },
+      "delete_entity_select": {
+        "title": "Entität auswählen",
+        "data": {
+          "entity_key": "Entität"
+        }
+      },
+      "delete_entity": {
+        "title": "Entität löschen",
+        "description": "Soll {entity} gelöscht werden?",
+        "data": {
+          "confirm": "Löschen bestätigen"
+        }
+      },
+      "import_profile": {
+        "title": "Profil importieren",
+        "description": "Füge das vollständige JSON-Profil ein.",
+        "data": {
+          "profile_json": "Profil-JSON"
+        }
+      },
+      "export_profile": {
+        "title": "Profil exportieren",
+        "description": "Kopiere das vollständige JSON-Profil aus diesem Feld.",
+        "data": {
+          "profile_json": "Profil-JSON"
+        }
+      }
+    },
+    "error": {
+      "invalid_profile": "Das Profil ist ungültig oder verwendet eine nicht unterstützte Schemaversion.",
+      "invalid_entity": "Die Entitätsdefinition ist ungültig. Prüfe plattformspezifische Werte und JSON-Optionen.",
+      "duplicate_key": "Dieser eindeutige Schlüssel wird bereits verwendet."
+    },
+    "abort": {
+      "no_entities": "Es sind keine Entitäten konfiguriert.",
+      "entity_not_found": "Die ausgewählte Entität existiert nicht mehr."
+    }
+  }
+}

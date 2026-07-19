@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "name": "Example Modbus Device",
+  "manufacturer": "Example",
+  "model": "TCP Device",
+  "description": "Example profile for import testing.",
+  "defaults": {"byte_order": "big", "word_order": "big"},
+  "entities": [
+    {
+      "key": "temperature",
+      "name": "Temperature",
+      "platform": "sensor",
+      "table": "holding_register",
+      "register": 0,
+      "data_type": "uint16",
+      "scale": 0.1,
+      "offset": 0,
+      "unit": "°C"
+    },
+    {
+      "key": "running",
+      "name": "Running",
+      "platform": "binary_sensor",
+      "table": "discrete_input",
+      "register": 0
+    }
+  ]
+}

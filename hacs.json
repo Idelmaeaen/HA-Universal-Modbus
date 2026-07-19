@@ -1,3 +1,5 @@
 {
-  "name": "Universal Modbus"
+  "name": "Universal Modbus",
+  "zip_release": true,
+  "filename": "universal_modbus.zip"
 }

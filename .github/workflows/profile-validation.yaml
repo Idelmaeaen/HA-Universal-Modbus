@@ -1,0 +1,36 @@
+name: Validate device profiles
+
+on:
+  push:
+    paths:
+      - "profiles/**"
+      - "scripts/validate_profiles.py"
+      - "custom_components/universal_modbus/models.py"
+      - "custom_components/universal_modbus/const.py"
+      - ".github/workflows/profile-validation.yaml"
+  pull_request:
+    paths:
+      - "profiles/**"
+      - "scripts/validate_profiles.py"
+      - "custom_components/universal_modbus/models.py"
+      - "custom_components/universal_modbus/const.py"
+      - ".github/workflows/profile-validation.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Validate profiles
+        run: python scripts/validate_profiles.py

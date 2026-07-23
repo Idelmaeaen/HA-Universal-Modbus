@@ -102,8 +102,9 @@ Open **Universal Modbus** in the Home Assistant sidebar. From there you can:
 **Settings > Devices & services > Universal Modbus > Configure** links to this
 editor.
 
-The upload and download buttons import or export the complete hub, including
-its connection and entity configuration.
+The upload and download buttons import or export the hub configuration and its
+entities. For privacy, exports omit the IP address and exporter identity; the IP
+address is requested during import.
 
 ### Screenshots
 

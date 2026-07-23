@@ -331,14 +331,14 @@ class UniversalModbusPanel extends HTMLElement {
   }
 
   _exportHub() {
+    const { host: _host, ...exportedHub } = this._entry.hub;
     const payload = {
       metadata: {
         integration: "Universal Modbus",
         version: this._data?.version || "",
-        exported_by: this._hass?.user?.name || this._hass?.user?.id || "",
         created_at: new Date().toISOString(),
       },
-      hub: this._entry.hub,
+      hub: exportedHub,
       profile: this._entry.profile,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });

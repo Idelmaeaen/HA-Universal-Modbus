@@ -8,12 +8,14 @@ from .const import PROFILE_SCHEMA_VERSION
 
 SUPPORTED_PLATFORMS = {"sensor", "binary_sensor", "switch", "toggle_switch", "button", "number", "select"}
 SUPPORTED_TABLES = {"coil", "discrete_input", "holding_register", "input_register"}
-SUPPORTED_DATA_TYPES = {"bool", "int16", "uint16", "int32", "uint32", "float32"}
+SUPPORTED_DATA_TYPES = {"bool", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32"}
 SUPPORTED_ORDERS = {"big", "little"}
 
 
 def automatic_count_for_data_type(data_type: str) -> int:
     """Return the fixed bit/register width for a supported data type."""
+    if data_type in {"int64", "uint64"}:
+        return 4
     return 2 if data_type in {"int32", "uint32", "float32"} else 1
 
 

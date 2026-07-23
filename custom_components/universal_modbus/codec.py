@@ -11,12 +11,16 @@ _FORMATS = {
     "uint16": "H",
     "int32": "i",
     "uint32": "I",
+    "int64": "q",
+    "uint64": "Q",
     "float32": "f",
 }
 
 
 def required_registers(data_type: str) -> int:
     """Return the register width for a supported data type."""
+    if data_type in {"int64", "uint64"}:
+        return 4
     return 2 if data_type in {"int32", "uint32", "float32"} else 1
 
 
@@ -37,6 +41,8 @@ def decode_registers(registers: list[int], definition: ModbusEntityDefinition) -
     payload = b"".join(word.to_bytes(2, byteorder=byte_order, signed=False) for word in words)
     prefix = ">" if definition.byte_order == "big" else "<"
     raw = struct.unpack(prefix + _FORMATS[definition.data_type], payload)[0]
+    if definition.data_type != "float32" and definition.scale == 1 and definition.offset == 0:
+        return raw
     return raw * definition.scale + definition.offset
 
 
@@ -45,9 +51,12 @@ def encode_registers(value: Any, definition: ModbusEntityDefinition) -> list[int
     if definition.data_type == "bool":
         return [1 if bool(value) else 0]
 
-    raw = (float(value) - definition.offset) / definition.scale
-    if definition.data_type != "float32":
-        raw = int(round(raw))
+    if definition.data_type != "float32" and definition.scale == 1 and definition.offset == 0:
+        raw = int(value)
+    else:
+        raw = (float(value) - definition.offset) / definition.scale
+        if definition.data_type != "float32":
+            raw = int(round(raw))
 
     prefix = ">" if definition.byte_order == "big" else "<"
     payload = struct.pack(prefix + _FORMATS[definition.data_type], raw)

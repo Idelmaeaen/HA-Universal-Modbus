@@ -17,7 +17,7 @@ Universal Modbus is developed and maintained by **Edelmann Electronics**.
 - Write coils and holding registers
 - Create `sensor`, `binary_sensor`, `switch`, `button`, `number`, and `select`
   entities, including pulsed ToggleSwitch entities
-- Decode `bool`, `int16`, `uint16`, `int32`, `uint32`, and `float32` values
+- Decode `bool`, `int16`, `uint16`, `int32`, `uint32`, `int64`, `uint64`, and `float32` values
 - Configure scaling, offsets, byte order, and word order
 - Use a separate feedback register for writable entities
 - Display and control entity values directly in the sidebar
@@ -147,7 +147,7 @@ history, dashboards, and automations.
 | Input register | Read-only | All supported types |
 
 `bool`, `int16`, and `uint16` use one bit or register. `int32`, `uint32`, and
-`float32` use two registers.
+`float32` use two registers. `int64` and `uint64` use four registers.
 
 ### Addressing and conversion
 
@@ -156,7 +156,7 @@ history, dashboards, and automations.
 - Register values are calculated as `value = raw value × scale + offset`.
   Writes reverse this calculation before encoding.
 - Byte order controls the bytes inside each register. Word order controls the
-  two registers of a 32-bit value. Both settings apply to the complete hub.
+  registers of a multi-register value. Both settings apply to the complete hub.
 - A feedback register lets a writable entity read its state from a different
   Modbus address than its write target.
 - Enum sensors can map raw values to text. Select options map displayed labels

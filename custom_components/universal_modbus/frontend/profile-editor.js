@@ -1,6 +1,6 @@
 const PLATFORMS = ["sensor", "binary_sensor", "switch", "toggle_switch", "button", "number", "select"];
 const TABLES = ["coil", "discrete_input", "holding_register", "input_register"];
-const DATA_TYPES = ["bool", "int16", "uint16", "int32", "uint32", "float32"];
+const DATA_TYPES = ["bool", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32"];
 const DEVICE_CLASS_UNITS = {
   apparent_power: ["VA", "kVA"], battery: ["%"], current: ["A", "mA"],
   data_rate: ["bit/s", "kbit/s", "Mbit/s", "Gbit/s", "B/s", "kB/s", "MB/s", "GB/s"],
@@ -460,7 +460,7 @@ class UniversalModbusPanel extends HTMLElement {
       if (d.device_class === "enum") d.device_class = null;
     }
     const dataTypes = bitArea ? ["bool"] : DATA_TYPES;
-    d.count = ["int32", "uint32", "float32"].includes(d.data_type) ? 2 : 1;
+    d.count = ["int64", "uint64"].includes(d.data_type) ? 4 : (["int32", "uint32", "float32"].includes(d.data_type) ? 2 : 1);
     const deviceClasses = (this._data.device_classes[d.platform] || []).filter((item) => !coilSensor || item !== "enum");
     const analog = d.data_type !== "bool";
     const feedback = Boolean(d.feedback_table);
@@ -494,7 +494,7 @@ class UniversalModbusPanel extends HTMLElement {
     const data = { ...this._draft };
     new FormData(form).forEach((value, key) => { data[key] = value; });
     ["register", "count", "feedback_register", "command_on", "command_off", "pulse_ms"].forEach((key) => { if (key in data) data[key] = Number.parseInt(data[key], 10) || 0; });
-    data.count = ["int32", "uint32", "float32"].includes(data.data_type) ? 2 : 1;
+    data.count = ["int64", "uint64"].includes(data.data_type) ? 4 : (["int32", "uint32", "float32"].includes(data.data_type) ? 2 : 1);
     ["scale", "offset", "minimum", "maximum", "step"].forEach((key) => { if (key in data) data[key] = Number.parseFloat(data[key]); });
     data.key ||= null;
     data.feedback_table ||= null; data.feedback_register = data.feedback_table ? data.feedback_register : null;

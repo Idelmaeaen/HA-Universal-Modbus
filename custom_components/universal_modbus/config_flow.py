@@ -33,7 +33,7 @@ from .models import ModbusEntityDefinition, ModbusProfile, automatic_count_for_d
 
 PLATFORMS = ["sensor", "binary_sensor", "switch", "toggle_switch", "button", "number", "select"]
 TABLES = ["coil", "discrete_input", "holding_register", "input_register"]
-DATA_TYPES = ["bool", "int16", "uint16", "int32", "uint32", "float32"]
+DATA_TYPES = ["bool", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32"]
 ORDERS = ["big", "little"]
 WRITABLE_PLATFORMS = {"switch", "toggle_switch", "button", "number", "select"}
 DEVICE_CLASSES_BY_PLATFORM = {

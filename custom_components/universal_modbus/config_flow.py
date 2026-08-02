@@ -28,6 +28,7 @@ from .const import (
     DOMAIN,
     PROFILE_SCHEMA_VERSION,
 )
+from .formula import DEFAULT_READ_FORMULA, DEFAULT_WRITE_FORMULA
 from .helpers import generate_unique_key
 from .models import ModbusEntityDefinition, ModbusProfile, automatic_count_for_data_type
 
@@ -391,6 +392,9 @@ class UniversalModbusOptionsFlow(config_entries.OptionsFlow):
                 vol.Required("register", default=value.get("register", 0)): vol.All(int, vol.Range(min=0)),
                 vol.Required("data_type", default=value.get("data_type", "int16")): vol.In(DATA_TYPES),
                 vol.Optional(
+                    "advanced_calculation", default=value.get("advanced_calculation", False)
+                ): bool,
+                vol.Optional(
                     "feedback_table", default=value.get("feedback_table") or ""
                 ): vol.In(FEEDBACK_TABLE_OPTIONS),
             }
@@ -411,6 +415,16 @@ class UniversalModbusOptionsFlow(config_entries.OptionsFlow):
                 schema[vol.Optional("unit", default=value.get("unit") or "")] = SelectSelector(
                     SelectSelectorConfig(options=UNIT_OPTIONS, custom_value=True)
                 )
+        if value.get("advanced_calculation"):
+            schema[vol.Required(
+                "read_formula",
+                default=value.get("read_formula", DEFAULT_READ_FORMULA),
+            )] = str
+            if platform in WRITABLE_PLATFORMS:
+                schema[vol.Required(
+                    "write_formula",
+                    default=value.get("write_formula", DEFAULT_WRITE_FORMULA),
+                )] = str
         if platform in {"sensor", "number"} and data_type != "bool":
             schema[vol.Optional("display_precision", default=value.get("display_precision") if value.get("display_precision") is not None else "")] = vol.In({"": "None", **{str(item): str(item) for item in range(7)}})
         schema[vol.Optional("icon", default=value.get("icon") or "")] = str
@@ -496,6 +510,9 @@ class UniversalModbusOptionsFlow(config_entries.OptionsFlow):
                 "count": automatic_count_for_data_type(user_input["data_type"]),
                 "scale": user_input.get("scale", 1.0),
                 "offset": user_input.get("offset", 0.0),
+                "advanced_calculation": user_input.get("advanced_calculation", False),
+                "read_formula": user_input.get("read_formula", DEFAULT_READ_FORMULA),
+                "write_formula": user_input.get("write_formula", DEFAULT_WRITE_FORMULA),
                 "unit": user_input.get("unit") or None,
                 "icon": user_input.get("icon") or None,
                 "display_precision": display_precision,

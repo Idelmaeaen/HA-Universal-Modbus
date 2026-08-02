@@ -17,7 +17,12 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from homeassistant.util import dt as dt_util
 from pymodbus.client import ModbusTcpClient
 
-from .codec import decode_registers, encode_registers, required_registers
+from .codec import (
+    apply_write_formula,
+    decode_registers,
+    encode_registers,
+    required_registers,
+)
 from .const import (
     CONF_ENTITIES,
     CONF_SCAN_INTERVAL,
@@ -302,6 +307,8 @@ class UniversalModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 device = {self._device_id_parameter: self._slave}
 
                 if definition.table == "coil":
+                    if definition.advanced_calculation:
+                        value = apply_write_formula(value, definition)
                     response = self._client.write_coil(
                         definition.register, bool(value), **device
                     )

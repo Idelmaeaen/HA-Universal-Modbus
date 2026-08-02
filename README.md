@@ -19,6 +19,7 @@ Universal Modbus is developed and maintained by **Edelmann Electronics**.
   entities, including pulsed ToggleSwitch entities
 - Decode `bool`, `int16`, `uint16`, `int32`, `uint32`, `int64`, `uint64`, and `float32` values
 - Configure scaling, offsets, byte order, and word order
+- Use safe per-entity read and write formulas for advanced calculations
 - Use a separate feedback register for writable entities
 - Display and control entity values directly in the sidebar
 - Import and export a complete hub
@@ -128,6 +129,7 @@ area, and data type. The most important settings are:
 - Name, entity type, icon, and Home Assistant device/state class
 - Modbus table and zero-based register address
 - Data type, scale, offset, unit, and displayed decimal places
+- Optional advanced read and write formulas
 - Optional feedback table and register
 - Write commands and pulse duration for switch-like entities
 - Minimum, maximum, and step for numbers
@@ -161,6 +163,46 @@ history, dashboards, and automations.
   Modbus address than its write target.
 - Enum sensors can map raw values to text. Select options map displayed labels
   to integer values.
+
+### Advanced calculations
+
+Enable **Advanced calculation** in an entity editor to replace the fixed scale
+and offset conversion with formulas. Existing entities and entities with the
+option disabled continue to use the normal conversion.
+
+The read formula is prefilled with:
+
+```text
+register_value * scale + offset
+```
+
+`register_value` is the decoded Modbus value after the configured data type,
+byte order, and word order have been applied. `scale` and `offset` are the
+entity's configured values.
+
+Writable entity types also show a write formula. It converts the Home Assistant
+value back to the raw value that is encoded into the register and defaults to:
+
+```text
+(value - offset) / scale
+```
+
+Formulas are single expressions. They support `+`, `-`, `*`, `/`, `//`, `%`,
+comparisons, boolean operators, and conditional expressions. The available
+functions are `abs`, `min`, `max`, `round`, `int`, `float`, and `bool`.
+
+Examples:
+
+```text
+None if register_value == 65535 else register_value / 10
+100 if register_value > 0 else 0
+round(max(register_value, 0) * scale + offset, 2)
+```
+
+Returning `None` from a read formula creates an unknown value. Formulas are
+validated when the profile is saved and run in a restricted evaluator; Python
+imports, attributes, indexing, and function definitions are not allowed. If a
+read formula fails at runtime, only the affected entity becomes unavailable.
 
 ## Error handling and diagnostics
 

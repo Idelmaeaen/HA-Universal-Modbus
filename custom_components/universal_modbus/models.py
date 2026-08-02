@@ -1,10 +1,16 @@
 """Data models and validation for Universal Modbus profiles."""
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from .const import PROFILE_SCHEMA_VERSION
+from .formula import (
+    DEFAULT_READ_FORMULA,
+    DEFAULT_WRITE_FORMULA,
+    validate_formula,
+)
 
 SUPPORTED_PLATFORMS = {"sensor", "binary_sensor", "switch", "toggle_switch", "button", "number", "select"}
 SUPPORTED_TABLES = {"coil", "discrete_input", "holding_register", "input_register"}
@@ -32,6 +38,9 @@ class ModbusEntityDefinition:
     count: int = 1
     scale: float = 1.0
     offset: float = 0.0
+    advanced_calculation: bool = False
+    read_formula: str = DEFAULT_READ_FORMULA
+    write_formula: str = DEFAULT_WRITE_FORMULA
     unit: str | None = None
     icon: str | None = None
     device_class: str | None = None
@@ -74,6 +83,10 @@ class ModbusEntityDefinition:
             raise ValueError("Unsupported byte or word order")
         if entity.register < 0:
             raise ValueError("Register is invalid")
+        if entity.advanced_calculation:
+            validate_formula(entity.read_formula, "register_value")
+            if entity.writable:
+                validate_formula(entity.write_formula, "value")
         entity.count = automatic_count_for_data_type(entity.data_type)
         if entity.display_precision is not None and not 0 <= entity.display_precision <= 6:
             raise ValueError("Display precision must be between 0 and 6")

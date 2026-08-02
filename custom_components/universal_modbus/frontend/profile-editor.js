@@ -1,6 +1,8 @@
 const PLATFORMS = ["sensor", "binary_sensor", "switch", "toggle_switch", "button", "number", "select"];
 const TABLES = ["coil", "discrete_input", "holding_register", "input_register"];
 const DATA_TYPES = ["bool", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32"];
+const DEFAULT_READ_FORMULA = "register_value * scale + offset";
+const DEFAULT_WRITE_FORMULA = "(value - offset) / scale";
 const DEVICE_CLASS_UNITS = {
   apparent_power: ["VA", "kVA"], battery: ["%"], current: ["A", "mA"],
   data_rate: ["bit/s", "kbit/s", "Mbit/s", "Gbit/s", "B/s", "kB/s", "MB/s", "GB/s"],
@@ -125,6 +127,7 @@ class UniversalModbusPanel extends HTMLElement {
       table{width:100%;border-collapse:collapse}th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--divider-color)}th{font-weight:500;color:var(--secondary-text-color)}th.sortable{padding:0}button.sort{display:flex;align-items:center;gap:5px;width:100%;padding:12px 16px;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}button.sort:hover{color:var(--primary-text-color);background:var(--secondary-background-color)}button.sort ha-icon{width:16px;height:16px}td.actions{width:128px;white-space:nowrap}.entity-icon{width:38px;text-align:center}.entity-icon ha-icon{color:var(--secondary-text-color)}.empty{text-align:center;color:var(--secondary-text-color);padding:28px}
       .icon{display:inline-flex;border:0;background:transparent;color:var(--primary-color);cursor:pointer;padding:7px;border-radius:50%;text-decoration:none}.icon:hover{background:var(--secondary-background-color)}.icon.danger{color:var(--error-color)}.entity-link{border:0;padding:0;background:transparent;color:var(--primary-color);font:inherit;text-align:left;cursor:pointer}.entity-link:hover{text-decoration:underline}ha-icon{pointer-events:none}.value-control{display:flex;align-items:center;gap:8px;min-width:120px}.value-control input[type="checkbox"]{width:auto}.value-control input[type="number"],.value-control select{min-width:90px;padding:7px}.value-control button{flex:0 0 auto}.value-unit{color:var(--secondary-text-color);white-space:nowrap}
       .add-row td{height:42px}.add-row td:last-child{text-align:right}.modal-backdrop{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}.dialog{width:min(760px,100%);max-height:90vh;overflow:auto;background:var(--card-background-color);border-radius:12px;box-shadow:0 8px 32px #0008}.dialog h2{margin:0;padding:20px 24px;border-bottom:1px solid var(--divider-color)}form{padding:20px 24px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.field.full{grid-column:1/-1}.group{grid-column:1/-1;border:1px solid var(--divider-color);border-radius:8px;padding:16px}.group-title{font-size:15px;font-weight:600;margin:0 0 14px}.group-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.field label{display:block;font-size:13px;color:var(--secondary-text-color);margin-bottom:6px}.field.checkbox label{display:inline-flex;align-items:center;gap:8px;margin-bottom:0}.field.checkbox input{width:auto;margin:0}.readonly input{color:var(--secondary-text-color)}ha-icon-picker{display:block}.buttons{display:flex;justify-content:flex-end;gap:10px;margin-top:24px}.button{width:auto;border:0;border-radius:6px;padding:10px 18px;cursor:pointer;font-weight:500}.button.primary{background:var(--primary-color);color:var(--text-primary-color)}.button.secondary{background:var(--secondary-background-color);color:var(--primary-text-color)}.error{padding:14px;background:var(--error-color);color:white;border-radius:6px;margin-bottom:16px}
+      .formula-help{color:var(--secondary-text-color);font-size:12px;line-height:1.5}.formula-help code{color:var(--primary-text-color);background:var(--secondary-background-color);border-radius:4px;padding:2px 5px}.formula-field textarea{font-family:monospace;resize:vertical}
       @media(max-width:700px){.page{padding:12px}.header{align-items:stretch;flex-direction:column}.header-actions{align-items:stretch}.hub-picker{align-items:stretch;flex-direction:column}.hub-main{grid-template-columns:1fr}.hub-health{align-items:flex-start}.hub-diagnostics{justify-content:flex-start;gap:14px;max-width:100%;overflow-x:auto}.diagnostic{align-items:flex-start}.grid,.group-grid{grid-template-columns:1fr}th:nth-child(4),td:nth-child(4){display:none}th,td{padding:10px}.dialog{max-height:96vh}}
     </style>`;
   }
@@ -384,7 +387,7 @@ class UniversalModbusPanel extends HTMLElement {
   }
   _defaults() {
     const defaults = this._entry.profile.defaults || {};
-    return { name: "", key: "", platform: "sensor", table: "holding_register", register: 0, data_type: "int16", count: 1, scale: 1, offset: 0, unit: "", icon: "", device_class: "", state_class: "", display_precision: null, byte_order: defaults.byte_order || "big", word_order: defaults.word_order || "big", writable: false, feedback_table: "", feedback_register: 0, command_on: 1, command_off: 0, pulse_ms: 0, minimum: 0, maximum: 100, step: 1, options: {} };
+    return { name: "", key: "", platform: "sensor", table: "holding_register", register: 0, data_type: "int16", count: 1, scale: 1, offset: 0, advanced_calculation: false, read_formula: DEFAULT_READ_FORMULA, write_formula: DEFAULT_WRITE_FORMULA, unit: "", icon: "", device_class: "", state_class: "", display_precision: null, byte_order: defaults.byte_order || "big", word_order: defaults.word_order || "big", writable: false, feedback_table: "", feedback_register: 0, command_on: 1, command_off: 0, pulse_ms: 0, minimum: 0, maximum: 100, step: 1, options: {} };
   }
 
   _openEditor(index = null, removeOnCancel = false, regenerateKeyOnSave = false) {
@@ -393,6 +396,10 @@ class UniversalModbusPanel extends HTMLElement {
     this._regenerateKeyOnSave = regenerateKeyOnSave;
     this._draft = { ...this._defaults(), ...(index === null ? {} : this._entry.profile.entities[index]) };
     this._renderEditor();
+  }
+
+  _textarea(name, label) {
+    return `<div class="field full formula-field"><label for="${name}">${label}</label><textarea id="${name}" name="${name}" rows="3" required>${this._escape(this._draft[name] ?? "")}</textarea></div>`;
   }
 
   _field(name, label, type = "text", extra = "") {
@@ -479,15 +486,25 @@ class UniversalModbusPanel extends HTMLElement {
     const readOnlyField = readOnlyPlatform ? this._checkbox("read_only", "Read Only", readOnly) : "";
     const modbusDetails = `${readOnlyField}${feedback ? `${this._field("feedback_register", this._t("Feedback register", "R\u00FCckmelderegister"), "number", 'min="0"')}${switchLike ? `${this._field("command_on", this._t("On command", "Einschaltwert"), "number")}${this._field("command_off", this._t("Off command", "Ausschaltwert"), "number")}` : ""}` : ""}`;
     const properties = `${this._select("platform", this._t("Entity type", "Entit\u00E4tstyp"), PLATFORMS)}${deviceClasses.length ? this._select("device_class", this._t("Device class", "Ger\u00E4teklasse"), deviceClasses, true) : ""}${d.platform === "sensor" && !hasOptions ? this._select("state_class", this._t("State class", "Zustandsklasse"), this._data.state_classes, true) : ""}${unitField}${this._iconField()}${analog && ["sensor", "number"].includes(d.platform) ? this._precisionSelect() : ""}${analog ? `${this._field("offset", "Offset", "number", 'step="any"')}${this._field("scale", this._t("Scale", "Skalierung"), "number", 'step="any"')}` : ""}${pulseLike ? this._field("pulse_ms", this._t("Pulse duration (ms)", "Impulsdauer (ms)"), "number", 'min="0"') : ""}${d.platform === "number" ? `${this._field("minimum", "Minimum", "number", 'step="any"')}${this._field("maximum", "Maximum", "number", 'step="any"')}${this._field("step", this._t("Step", "Schrittweite"), "number", 'step="any" min="0.000001"')}` : ""}${["sensor", "binary_sensor", "select"].includes(d.platform) && !coilSensor ? `<div class="field full"><label for="options_json">${this._t("Options as JSON", "Optionen als JSON")}</label><textarea id="options_json" name="options_json" rows="5">${this._escape(JSON.stringify(d.options || {}, null, 2))}</textarea></div>` : ""}`;
+    const formulaHelp = this._t(
+      "Read formulas use register_value; write formulas use value. scale and offset are available in both. Supported: +, -, *, /, //, %, comparisons, if/else, abs, min, max, round, int, float, and bool. Examples: None if register_value == 65535 else register_value / 10; 100 if register_value > 0 else 0.",
+      "Leseformeln verwenden register_value, Schreibformeln value. scale und offset stehen in beiden zur Verf\u00FCgung. Unterst\u00FCtzt: +, -, *, /, //, %, Vergleiche, if/else, abs, min, max, round, int, float und bool. Beispiele: None if register_value == 65535 else register_value / 10; 100 if register_value > 0 else 0."
+    );
+    const formulaFields = d.advanced_calculation
+      ? `${this._textarea("read_formula", this._t("Read formula", "Leseformel"))}${readOnlyPlatform ? this._textarea("write_formula", this._t("Write formula", "Schreibformel")) : ""}<div class="field full formula-help">${this._escape(formulaHelp)}</div>`
+      : "";
+    const advancedSection = `<section class="group"><h3 class="group-title">${this._t("Calculation", "Berechnung")}</h3><div class="group-grid">${this._checkbox("advanced_calculation", this._t("Advanced calculation", "Erweiterte Berechnung"), d.advanced_calculation)}${formulaFields}</div></section>`;
     const uniqueId = this._entryId || this._t("Generated when saved", "Wird beim Speichern erzeugt");
     const identity = `${this._field("name", this._t("Name", "Name"), "text", "required")}${this._readonlyField("key_preview", "key", d.key || this._t("Generated when saved", "Wird beim Speichern erzeugt"))}${this._readonlyField("unique_id", "unique_id", uniqueId)}<input name="key" type="hidden" value="${this._escape(d.key || "")}">`;
     const dialog = document.createElement("div"); dialog.className = "modal-backdrop";
     dialog.innerHTML = `<div class="dialog"><h2>${this._editingIndex === null ? this._t("Add entity", "Entit\u00E4t hinzuf\u00FCgen") : this._t("Edit entity", "Entit\u00E4t bearbeiten")}</h2><form>${error ? `<div class="error">${this._escape(error)}</div>` : ""}<div class="grid">${identity}<section class="group"><h3 class="group-title">Modbus</h3><div class="group-grid">${this._select("table", this._t("Register area", "Bereich"), TABLES)}${this._field("register", this._t("Register", "Register"), "number", 'min="0" required')}${this._select("data_type", this._t("Data type", "Datentyp"), dataTypes)}${this._select("feedback_table", this._t("Feedback source", "R\u00FCckmeldung"), TABLES, true)}${modbusDetails}</div></section><section class="group"><h3 class="group-title">${this._t("Properties", "Eigenschaften")}</h3><div class="group-grid">${properties}</div></section></div><div class="buttons"><button type="button" class="button secondary cancel">${this._t("Cancel", "Abbrechen")}</button><button type="submit" class="button primary">${this._t("Save", "Speichern")}</button></div></form></div>`;
+    dialog.querySelector(".grid").insertAdjacentHTML("beforeend", advancedSection);
     this.shadowRoot.querySelector(".modal-backdrop")?.remove(); this.shadowRoot.appendChild(dialog);
     dialog.querySelector(".cancel").addEventListener("click", () => this._cancelEditor());
     this._wireIconPicker(dialog);
     this._wireKeyPreview(dialog);
     ["platform", "table", "data_type", "feedback_table", "device_class"].forEach((name) => dialog.querySelector(`[name="${name}"]`)?.addEventListener("change", () => { const previousPlatform = this._draft.platform; this._draft = this._readForm(dialog.querySelector("form"), false); if (this._draft.platform !== previousPlatform) { this._draft.device_class = null; this._draft.state_class = null; this._draft.unit = null; } if (["coil", "discrete_input"].includes(this._draft.table)) this._draft.data_type = "bool"; this._renderEditor(); }));
+    dialog.querySelector('[name="advanced_calculation"]')?.addEventListener("change", () => { this._draft = this._readForm(dialog.querySelector("form"), false); this._renderEditor(); });
     dialog.querySelector("form").addEventListener("submit", (event) => { event.preventDefault(); this._saveEntity(this._readForm(event.target, true)); });
   }
   _readForm(form, includeOptions) {
@@ -506,6 +523,7 @@ class UniversalModbusPanel extends HTMLElement {
     data.device_class ||= null; data.state_class = data.platform === "sensor" ? (data.state_class || null) : null;
     data.unit ||= null; data.icon ||= null; data.display_precision = data.display_precision === "" || data.display_precision === null || data.display_precision === undefined ? null : Number.parseInt(data.display_precision, 10); if (!["sensor", "number"].includes(data.platform) || data.data_type === "bool") data.display_precision = null; data.pulse_ms = ["toggle_switch", "button"].includes(data.platform) ? (data.pulse_ms || null) : null;
     data.writable = ["switch", "toggle_switch", "button", "number", "select"].includes(data.platform) && data.read_only !== "on";
+    data.advanced_calculation = data.advanced_calculation === "on";
     delete data.read_only;
     delete data.options_json;
     return data;

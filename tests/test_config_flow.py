@@ -86,3 +86,36 @@ def test_select_and_binary_sensor_options_are_unchanged() -> None:
         "0": "Off",
         "1": "On",
     }
+
+
+def test_advanced_formula_fields_follow_checkbox_and_entity_type() -> None:
+    sensor = _entity_input(
+        table="holding_register",
+        data_type="uint16",
+        advanced_calculation=True,
+    )
+    number = {**sensor, "platform": "number", "device_class": ""}
+
+    sensor_keys = _schema_keys(
+        UniversalModbusOptionsFlow._entity_details_schema(sensor)
+    )
+    number_keys = _schema_keys(
+        UniversalModbusOptionsFlow._entity_details_schema(number)
+    )
+
+    assert "read_formula" in sensor_keys
+    assert "write_formula" not in sensor_keys
+    assert {"read_formula", "write_formula"} <= number_keys
+    sensor["advanced_calculation"] = False
+    assert "read_formula" not in _schema_keys(
+        UniversalModbusOptionsFlow._entity_details_schema(sensor)
+    )
+
+
+def test_entity_input_keeps_advanced_formulas() -> None:
+    values = _entity_input(
+        table="holding_register", data_type="uint16", advanced_calculation=True,
+        read_formula="register_value / 10",
+    )
+
+    assert _flow()._entity_from_input(values, "status").read_formula == "register_value / 10"

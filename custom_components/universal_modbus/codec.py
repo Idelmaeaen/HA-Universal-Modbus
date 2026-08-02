@@ -4,6 +4,7 @@ from __future__ import annotations
 import struct
 from typing import Any
 
+from .formula import evaluate_formula
 from .models import ModbusEntityDefinition
 
 _FORMATS = {
@@ -27,7 +28,16 @@ def required_registers(data_type: str) -> int:
 def decode_registers(registers: list[int], definition: ModbusEntityDefinition) -> Any:
     """Decode registers and apply scale and offset."""
     if definition.data_type == "bool":
-        return bool(registers[0])
+        raw = bool(registers[0])
+        if definition.advanced_calculation:
+            return evaluate_formula(
+                definition.read_formula,
+                "register_value",
+                raw,
+                scale=definition.scale,
+                offset=definition.offset,
+            )
+        return raw
 
     count = required_registers(definition.data_type)
     if len(registers) < count:
@@ -41,17 +51,44 @@ def decode_registers(registers: list[int], definition: ModbusEntityDefinition) -
     payload = b"".join(word.to_bytes(2, byteorder=byte_order, signed=False) for word in words)
     prefix = ">" if definition.byte_order == "big" else "<"
     raw = struct.unpack(prefix + _FORMATS[definition.data_type], payload)[0]
+    if definition.advanced_calculation:
+        return evaluate_formula(
+            definition.read_formula,
+            "register_value",
+            raw,
+            scale=definition.scale,
+            offset=definition.offset,
+        )
     if definition.data_type != "float32" and definition.scale == 1 and definition.offset == 0:
         return raw
     return raw * definition.scale + definition.offset
 
 
+def apply_write_formula(value: Any, definition: ModbusEntityDefinition) -> Any:
+    """Apply the optional advanced write conversion."""
+    if not definition.advanced_calculation:
+        return value
+    return evaluate_formula(
+        definition.write_formula,
+        "value",
+        value,
+        scale=definition.scale,
+        offset=definition.offset,
+    )
+
+
 def encode_registers(value: Any, definition: ModbusEntityDefinition) -> list[int]:
     """Reverse scale and offset and encode a value for register writes."""
+    if definition.advanced_calculation:
+        value = apply_write_formula(value, definition)
     if definition.data_type == "bool":
         return [1 if bool(value) else 0]
 
-    if definition.data_type != "float32" and definition.scale == 1 and definition.offset == 0:
+    if definition.advanced_calculation:
+        raw = value
+        if definition.data_type != "float32":
+            raw = int(round(raw))
+    elif definition.data_type != "float32" and definition.scale == 1 and definition.offset == 0:
         raw = int(value)
     else:
         raw = (float(value) - definition.offset) / definition.scale

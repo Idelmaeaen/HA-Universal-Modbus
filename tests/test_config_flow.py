@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 import sys
 import types
@@ -39,6 +40,33 @@ def _entity_input(**overrides):
     }
     values.update(overrides)
     return values
+
+
+def test_init_exposes_all_options_flow_steps() -> None:
+    class TestOptionsFlow(UniversalModbusOptionsFlow):
+        @property
+        def config_entry(self):
+            return types.SimpleNamespace(entry_id="test-entry")
+
+        def async_show_menu(self, **kwargs):
+            return kwargs
+
+    flow = TestOptionsFlow()
+    flow._profile = lambda: {
+        "manufacturer": "Test",
+        "model": "Device",
+        "description": "Profile",
+    }
+
+    result = asyncio.run(flow.async_step_init())
+
+    assert result["step_id"] == "init"
+    assert result["menu_options"] == [
+        "profile_info",
+        "manage_entities",
+        "import_profile",
+        "export_profile",
+    ]
 
 
 def test_coil_sensor_schema_hides_options_and_enum_device_class() -> None:

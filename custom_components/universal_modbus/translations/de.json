@@ -15,6 +15,19 @@
       }
     }
   },
+  "entity": {
+    "sensor": {
+      "last_response_time_ms": {
+        "name": "Antwortzeit"
+      },
+      "communication_error_count": {
+        "name": "Kommunikationsfehler"
+      },
+      "last_successful_update": {
+        "name": "Letzte erfolgreiche Abfrage"
+      }
+    }
+  },
   "options": {
     "step": {
       "init": {

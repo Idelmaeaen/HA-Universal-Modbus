@@ -117,12 +117,15 @@ class UniversalModbusOptionsFlow(config_entries.OptionsFlow):
         self._entity_draft: dict[str, Any] | None = None
 
     async def async_step_init(self, user_input=None):
-        if user_input is not None:
-            return self.async_create_entry(title="", data=dict(self.config_entry.options))
         profile = self._profile()
-        return self.async_show_form(
+        return self.async_show_menu(
             step_id="init",
-            data_schema=vol.Schema({}),
+            menu_options=[
+                "profile_info",
+                "manage_entities",
+                "import_profile",
+                "export_profile",
+            ],
             description_placeholders={
                 "manufacturer": profile.get("manufacturer") or "-",
                 "model": profile.get("model") or "-",

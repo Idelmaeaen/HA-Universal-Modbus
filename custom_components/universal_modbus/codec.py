@@ -89,7 +89,7 @@ def encode_registers(value: Any, definition: ModbusEntityDefinition) -> list[int
         if definition.data_type != "float32":
             raw = int(round(raw))
     elif definition.data_type != "float32" and definition.scale == 1 and definition.offset == 0:
-        raw = int(value)
+        raw = int(round(value))
     else:
         raw = (float(value) - definition.offset) / definition.scale
         if definition.data_type != "float32":

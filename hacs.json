@@ -1,5 +1,6 @@
 {
   "name": "Universal Modbus",
+  "homeassistant": "2024.12.0",
   "zip_release": true,
   "filename": "universal_modbus.zip"
 }

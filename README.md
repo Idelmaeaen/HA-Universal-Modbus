@@ -204,6 +204,11 @@ validated when the profile is saved and run in a restricted evaluator; Python
 imports, attributes, indexing, and function definitions are not allowed. If a
 read formula fails at runtime, only the affected entity becomes unavailable.
 
+Only administrators should create or import profiles. A profile author is
+effectively an administrator: besides formulas, `pulse_ms` can pause a write
+for an unrestricted, profile-defined duration. Only use profiles from trusted
+sources.
+
 ## Error handling and diagnostics
 
 If one register read fails, the affected entity becomes unavailable while
@@ -217,7 +222,7 @@ After a successful write, the integration requests an immediate refresh.
 
 - Only Modbus TCP is supported; Modbus RTU/serial is not implemented.
 - Writes are limited to coils and holding registers.
-- Strings, 64-bit values, bitfields, and custom encodings are not supported.
+- Strings, bitfields, and custom encodings are not supported.
 - Device discovery is not implemented.
 - The editor does not verify whether an address, data type, or command is valid
   for the physical device.

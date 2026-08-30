@@ -17,20 +17,20 @@ from .entity import UniversalModbusEntity
 DIAGNOSTIC_SENSORS: tuple[SensorEntityDescription, ...] = (
     SensorEntityDescription(
         key="last_response_time_ms",
-        name="Antwortzeit",
+        translation_key="last_response_time_ms",
         native_unit_of_measurement=UnitOfTime.MILLISECONDS,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:timer-outline",
     ),
     SensorEntityDescription(
         key="communication_error_count",
-        name="Kommunikationsfehler",
+        translation_key="communication_error_count",
         state_class=SensorStateClass.TOTAL_INCREASING,
         icon="mdi:alert-circle-outline",
     ),
     SensorEntityDescription(
         key="last_successful_update",
-        name="Letzte erfolgreiche Abfrage",
+        translation_key="last_successful_update",
         device_class=SensorDeviceClass.TIMESTAMP,
         icon="mdi:clock-check-outline",
     ),
@@ -79,7 +79,6 @@ class UniversalModbusDiagnosticSensor(SensorEntity):
     def __init__(self, coordinator, description: SensorEntityDescription) -> None:
         self.coordinator = coordinator
         self.entity_description = description
-        self._attr_name = description.name
         self._attr_unique_id = f"{coordinator.entry.entry_id}_{description.key}"
         self._attr_device_class = description.device_class
         self._attr_native_unit_of_measurement = description.native_unit_of_measurement

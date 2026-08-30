@@ -115,3 +115,7 @@ def test_disabled_advanced_calculation_keeps_scale_and_offset_behavior() -> None
 
     assert decode_registers([200], definition) == 102
     assert encode_registers(102, definition) == [200]
+
+
+def test_integer_fast_path_rounds_before_encoding() -> None:
+    assert encode_registers(3.7, _definition()) == [4]

@@ -36,6 +36,7 @@ from .const import (
 )
 from .helpers import generate_unique_key
 from .models import ModbusEntityDefinition, ModbusProfile
+from .sensor import DIAGNOSTIC_SENSORS
 
 PANEL_URL = "universal-modbus"
 STATIC_URL = "/universal_modbus_static"
@@ -398,6 +399,10 @@ def websocket_cleanup_entities(hass, connection, msg) -> None:
         f"{entry.entry_id}_{definition['key']}"
         for definition in _entry_profile(entry)["entities"]
     }
+    current_unique_ids.update(
+        f"{entry.entry_id}_{description.key}"
+        for description in DIAGNOSTIC_SENSORS
+    )
     registry = er.async_get(hass)
     stale_entities = [
         entity

@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.0-beta.2 - 2026-10-20
+
+### Changed
+
+- Updated the entity-settings screenshot with the new Modbus read-function
+  labels.
+
+### Fixed
+
+- The mobile entity table now preserves its horizontal scroll position during
+  live Modbus polling updates.
+
 ## 1.3.0-beta.1 - 2026-10-20
 
 ### Changed

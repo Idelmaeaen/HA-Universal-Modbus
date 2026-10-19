@@ -109,6 +109,9 @@ The upload and download buttons import or export the hub configuration and its
 entities. For privacy, exports omit the IP address and exporter identity; the IP
 address is requested during import.
 
+On narrow screens, the entity table can be scrolled horizontally. The selected
+position remains unchanged while live Modbus values are refreshed.
+
 ### Screenshots
 
 Hub overview:
@@ -121,7 +124,7 @@ Hub settings:
 
 Entity settings:
 
-![Universal Modbus entity settings](docs/images/entity-editor-2026-10.png)
+<img src="docs/images/entity-editor-2026-10.png" alt="Universal Modbus entity settings" width="764">
 
 ## Entity configuration
 

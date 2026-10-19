@@ -44,6 +44,8 @@ class UniversalModbusPanel extends HTMLElement {
     this._draft = null;
     this._busy = false;
     this._refreshing = false;
+    this._tableScrollLeft = 0;
+    this._tableScrollActiveUntil = 0;
     this._sortColumn = null;
     this._sortDirection = "asc";
   }
@@ -103,7 +105,8 @@ class UniversalModbusPanel extends HTMLElement {
 
   _refreshBlocked() {
     return Boolean(
-      this.shadowRoot.querySelector(".modal-backdrop")
+      Date.now() < this._tableScrollActiveUntil
+      || this.shadowRoot.querySelector(".modal-backdrop")
       || this.shadowRoot.activeElement?.matches("#hub, .write-number, .write-select")
     );
   }
@@ -114,7 +117,9 @@ class UniversalModbusPanel extends HTMLElement {
   }
 
   _setEntryId(entryId) {
-    this._entryId = entryId || null;
+    const nextEntryId = entryId || null;
+    if (nextEntryId !== this._entryId) this._tableScrollLeft = 0;
+    this._entryId = nextEntryId;
     try {
       if (this._entryId) window.localStorage.setItem(SELECTED_HUB_STORAGE_KEY, this._entryId);
       else window.localStorage.removeItem(SELECTED_HUB_STORAGE_KEY);
@@ -221,6 +226,8 @@ class UniversalModbusPanel extends HTMLElement {
   }
 
   _render() {
+    const currentEntityTable = this.shadowRoot.querySelector(".entity-table");
+    if (currentEntityTable) this._tableScrollLeft = currentEntityTable.scrollLeft;
     const entries = this._data?.entries || [];
     if (!entries.length) {
       this.shadowRoot.innerHTML = `<div class="page">${this._header(`<div class="header-actions"><button class="icon import-hub" title="${this._t("Import hub", "Hub importieren")}"><ha-icon icon="mdi:upload"></ha-icon></button><button class="icon add-hub" title="${this._t("Add hub", "Hub hinzuf\u00FCgen")}"><ha-icon icon="mdi:plus"></ha-icon></button><input type="file" class="hub-file" accept="application/json,.json" hidden></div>`)}<div class="card empty">${this._t("No Universal Modbus hub configured.", "Kein Universal-Modbus-Hub konfiguriert.")}</div></div>${this._styles()}`;
@@ -251,6 +258,12 @@ class UniversalModbusPanel extends HTMLElement {
     const deviceLink = entry.device_id ? `<a class="icon device-hub" href="/config/devices/device/${encodeURIComponent(entry.device_id)}" title="${this._t("Open device", "Ger\u00E4t \u00F6ffnen")}" aria-label="${this._t("Open device", "Ger\u00E4t \u00F6ffnen")}"><ha-icon icon="mdi:open-in-new"></ha-icon></a>` : "";
     const actions = `<div class="header-actions">${hubSelector}${deviceLink}<button class="icon import-hub" title="${this._t("Import hub", "Hub importieren")}"><ha-icon icon="mdi:upload"></ha-icon></button><button class="icon export-hub" title="${this._t("Export hub", "Hub exportieren")}"><ha-icon icon="mdi:download"></ha-icon></button><button class="icon regenerate-keys" title="${this._t("Regenerate entity keys", "Entit\u00E4ts-Keys neu generieren")}"><ha-icon icon="mdi:key-change"></ha-icon></button><button class="icon cleanup-entities" title="${this._t("Remove orphaned entities", "Entit\u00E4ts-Leichen entfernen")}"><ha-icon icon="mdi:broom"></ha-icon></button><button class="icon add-hub" title="${this._t("Add hub", "Hub hinzuf\u00FCgen")}"><ha-icon icon="mdi:plus"></ha-icon></button><button class="icon edit-hub" title="${this._t("Edit hub", "Hub bearbeiten")}"><ha-icon icon="mdi:pencil"></ha-icon></button><button class="icon danger delete-hub" title="${this._t("Delete hub", "Hub l\u00F6schen")}"><ha-icon icon="mdi:delete"></ha-icon></button><input type="file" class="hub-file" accept="application/json,.json" hidden></div>`;
     this.shadowRoot.innerHTML = `<div class="page">${this._header(actions)}<div class="hub-card card"><div class="hub-main"><div class="hub-summary"><strong class="hub-title">${this._escape(entry.title)}</strong>${hubMetadata}<span class="hub-connection">${this._escape(h.host)}:${h.port} \u00B7 Unit ${h.slave} \u00B7 ${h.scan_interval}s</span></div><div class="hub-health"><span class="status ${connected ? "connected" : ""}">${connected ? this._t("Connected", "Verbunden") : this._t("Disconnected", "Nicht verbunden")}</span>${hubDiagnostics}</div></div></div><div class="toolbar"><button class="button secondary refresh">${this._t("Refresh values", "Werte aktualisieren")}</button></div><div class="card entity-table" role="region" aria-label="${this._t("Entities", "Entit\u00E4ten")}" tabindex="0"><table><thead><tr><th></th>${this._sortHeader("name", this._t("Name", "Name"))}${this._sortHeader("platform", this._t("Type", "Typ"))}${this._sortHeader("table", this._t("Area", "Bereich"))}${this._sortHeader("register", this._t("Register", "Register"))}${this._sortHeader("value", this._t("Current value", "Aktueller Wert"))}<th></th></tr></thead><tbody>${rows}<tr class="add-row"><td colspan="6"></td><td><button class="icon add" title="${this._t("Add entity", "Entit\u00E4t hinzuf\u00FCgen")}"><ha-icon icon="mdi:plus"></ha-icon></button></td></tr></tbody></table></div></div>${this._styles()}`;
+    const entityTable = this.shadowRoot.querySelector(".entity-table");
+    entityTable.scrollLeft = this._tableScrollLeft;
+    entityTable.addEventListener("scroll", () => {
+      this._tableScrollLeft = entityTable.scrollLeft;
+      this._tableScrollActiveUntil = Date.now() + 750;
+    }, { passive: true });
     this.shadowRoot.querySelector("#hub").addEventListener("change", (event) => { this._setEntryId(event.target.value); this._render(); });
     this.shadowRoot.querySelector(".add-hub").addEventListener("click", () => this._openHubEditor());
     this.shadowRoot.querySelector(".edit-hub").addEventListener("click", () => this._openHubEditor(this._entryId));

@@ -119,7 +119,7 @@ Hub settings:
 
 Entity settings:
 
-![Universal Modbus entity settings](docs/images/entity-editor.png)
+![Universal Modbus entity settings](docs/images/entity-editor.png?v=20261020)
 
 ## Entity configuration
 

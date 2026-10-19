@@ -1,27 +1,22 @@
 # Changelog
 
-## 1.3.0-beta.2 - 2026-10-20
+## 1.3.0 - 2026-10-20
 
 ### Changed
 
-- Updated the entity-settings screenshot with the new Modbus read-function
-  labels.
+- Register-area selectors and the entity table now display the corresponding
+  Modbus read function codes and protocol names (`0x01` through `0x04`).
+- The sidebar editor now remembers the selected hub across page reloads and
+  later visits in the same browser.
+- The entity table can now be scrolled horizontally on narrow mobile screens,
+  keeping all values and controls accessible.
+- Updated the entity-settings documentation and screenshot to show the new
+  Modbus read-function labels.
 
 ### Fixed
 
 - The mobile entity table now preserves its horizontal scroll position during
   live Modbus polling updates.
-
-## 1.3.0-beta.1 - 2026-10-20
-
-### Changed
-
-- Register-area selectors now display the corresponding Modbus read function
-  codes and protocol names (`0x01` through `0x04`).
-- The sidebar editor now remembers the selected hub across page reloads and
-  later visits in the same browser.
-- The entity table can now be scrolled horizontally on narrow mobile screens,
-  keeping all controls accessible.
 
 ## 1.2.0 - 2026-10-19
 

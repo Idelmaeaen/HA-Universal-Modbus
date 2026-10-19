@@ -124,7 +124,7 @@ Hub settings:
 
 Entity settings:
 
-<img src="docs/images/entity-editor-2026-10.png" alt="Universal Modbus entity settings" width="764">
+<img src="docs/images/entity-editor-2026-10.png" alt="Universal Modbus entity settings" width="760">
 
 ## Entity configuration
 

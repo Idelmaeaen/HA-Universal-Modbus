@@ -33,7 +33,12 @@ from .helpers import generate_unique_key
 from .models import ModbusEntityDefinition, ModbusProfile, automatic_count_for_data_type
 
 PLATFORMS = ["sensor", "binary_sensor", "switch", "toggle_switch", "button", "number", "select"]
-TABLES = ["coil", "discrete_input", "holding_register", "input_register"]
+TABLE_OPTIONS = {
+    "coil": "0x01 Read Coils",
+    "discrete_input": "0x02 Read Discrete Inputs",
+    "holding_register": "0x03 Read Holding Registers",
+    "input_register": "0x04 Read Input Registers",
+}
 DATA_TYPES = ["bool", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32"]
 ORDERS = ["big", "little"]
 WRITABLE_PLATFORMS = {"switch", "toggle_switch", "button", "number", "select"}
@@ -49,10 +54,7 @@ DEVICE_CLASSES_BY_PLATFORM = {
 STATE_CLASSES = sorted(item.value for item in SensorStateClass)
 FEEDBACK_TABLE_OPTIONS = {
     "": "None",
-    "coil": "coil",
-    "discrete_input": "discrete_input",
-    "holding_register": "holding_register",
-    "input_register": "input_register",
+    **TABLE_OPTIONS,
 }
 
 
@@ -391,7 +393,7 @@ class UniversalModbusOptionsFlow(config_entries.OptionsFlow):
             {
                 vol.Required("name", default=value.get("name", "")): str,
                 vol.Required("platform", default=value.get("platform", "sensor")): vol.In(PLATFORMS),
-                vol.Required("table", default=value.get("table", "holding_register")): vol.In(TABLES),
+                vol.Required("table", default=value.get("table", "holding_register")): vol.In(TABLE_OPTIONS),
                 vol.Required("register", default=value.get("register", 0)): vol.All(int, vol.Range(min=0)),
                 vol.Required("data_type", default=value.get("data_type", "int16")): vol.In(DATA_TYPES),
                 vol.Optional(

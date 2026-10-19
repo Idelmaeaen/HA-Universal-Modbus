@@ -1,6 +1,13 @@
 const PLATFORMS = ["sensor", "binary_sensor", "switch", "toggle_switch", "button", "number", "select"];
 const TABLES = ["coil", "discrete_input", "holding_register", "input_register"];
+const TABLE_LABELS = {
+  coil: "0x01 Read Coils",
+  discrete_input: "0x02 Read Discrete Inputs",
+  holding_register: "0x03 Read Holding Registers",
+  input_register: "0x04 Read Input Registers",
+};
 const DATA_TYPES = ["bool", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32"];
+const SELECTED_HUB_STORAGE_KEY = "universal_modbus.selected_hub";
 const DEFAULT_READ_FORMULA = "register_value * scale + offset";
 const DEFAULT_WRITE_FORMULA = "(value - offset) / scale";
 const DEVICE_CLASS_UNITS = {
@@ -61,9 +68,11 @@ class UniversalModbusPanel extends HTMLElement {
         type: "universal_modbus/editor/get",
       });
       const requested = new URLSearchParams(window.location.search).get("config_entry");
-      this._entryId = this._data.entries.some((item) => item.entry_id === requested)
-        ? requested
-        : this._data.entries[0]?.entry_id;
+      const stored = this._storedEntryId();
+      const selected = [requested, stored].find((entryId) =>
+        this._data.entries.some((item) => item.entry_id === entryId)
+      );
+      this._setEntryId(selected || this._data.entries[0]?.entry_id);
       this._render();
       clearInterval(this._refreshTimer);
       this._refreshTimer = setInterval(() => this._refresh(), 1000);
@@ -86,7 +95,7 @@ class UniversalModbusPanel extends HTMLElement {
       const data = await this._hass.connection.sendMessagePromise({ type: "universal_modbus/editor/get" });
       if (this._refreshBlocked()) return;
       this._data = data;
-      if (!data.entries.some((item) => item.entry_id === this._entryId)) this._entryId = data.entries[0]?.entry_id;
+      if (!data.entries.some((item) => item.entry_id === this._entryId)) this._setEntryId(data.entries[0]?.entry_id);
       this._render();
     } catch (_err) { /* Keep the last successful view. */ }
     finally { this._refreshing = false; }
@@ -98,6 +107,24 @@ class UniversalModbusPanel extends HTMLElement {
       || this.shadowRoot.activeElement?.matches("#hub, .write-number, .write-select")
     );
   }
+
+  _storedEntryId() {
+    try { return window.localStorage.getItem(SELECTED_HUB_STORAGE_KEY); }
+    catch (_err) { return null; }
+  }
+
+  _setEntryId(entryId) {
+    this._entryId = entryId || null;
+    try {
+      if (this._entryId) window.localStorage.setItem(SELECTED_HUB_STORAGE_KEY, this._entryId);
+      else window.localStorage.removeItem(SELECTED_HUB_STORAGE_KEY);
+    } catch (_err) { /* Browser storage may be unavailable. */ }
+    const url = new URL(window.location.href);
+    if (this._entryId) url.searchParams.set("config_entry", this._entryId);
+    else url.searchParams.delete("config_entry");
+    window.history.replaceState(window.history.state, "", url);
+  }
+
   get _entry() {
     return this._data?.entries.find((item) => item.entry_id === this._entryId);
   }
@@ -124,6 +151,9 @@ class UniversalModbusPanel extends HTMLElement {
       .hub-error{display:flex;align-items:flex-start;gap:7px;color:var(--error-color);font-size:13px;line-height:1.4;overflow-wrap:anywhere}.hub-error ha-icon{flex:0 0 auto;width:18px;height:18px}
       select,input,textarea{box-sizing:border-box;width:100%;padding:10px 12px;border:1px solid var(--divider-color);border-radius:6px;background:var(--card-background-color);color:var(--primary-text-color);font:inherit}
       .card{background:var(--card-background-color);border-radius:12px;box-shadow:var(--ha-card-box-shadow);overflow:hidden}
+      .entity-table{overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:var(--secondary-text-color) var(--divider-color)}
+      .entity-table::-webkit-scrollbar{height:8px}.entity-table::-webkit-scrollbar-track{background:var(--divider-color)}.entity-table::-webkit-scrollbar-thumb{background:var(--secondary-text-color);border-radius:4px}
+      .entity-table table{width:max-content;min-width:100%}
       table{width:100%;border-collapse:collapse}th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--divider-color)}th{font-weight:500;color:var(--secondary-text-color)}th.sortable{padding:0}button.sort{display:flex;align-items:center;gap:5px;width:100%;padding:12px 16px;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}button.sort:hover{color:var(--primary-text-color);background:var(--secondary-background-color)}button.sort ha-icon{width:16px;height:16px}td.actions{width:128px;white-space:nowrap}.entity-icon{width:38px;text-align:center}.entity-icon ha-icon{color:var(--secondary-text-color)}.empty{text-align:center;color:var(--secondary-text-color);padding:28px}
       .icon{display:inline-flex;border:0;background:transparent;color:var(--primary-color);cursor:pointer;padding:7px;border-radius:50%;text-decoration:none}.icon:hover{background:var(--secondary-background-color)}.icon.danger{color:var(--error-color)}.entity-link{border:0;padding:0;background:transparent;color:var(--primary-color);font:inherit;text-align:left;cursor:pointer}.entity-link:hover{text-decoration:underline}ha-icon{pointer-events:none}.value-control{display:flex;align-items:center;gap:8px;min-width:120px}.value-control input[type="checkbox"]{width:auto}.value-control input[type="number"],.value-control select{min-width:90px;padding:7px}.value-control button{flex:0 0 auto}.value-unit{color:var(--secondary-text-color);white-space:nowrap}
       .add-row td{height:42px}.add-row td:last-child{text-align:right}.modal-backdrop{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}.dialog{width:min(760px,100%);max-height:90vh;overflow:auto;background:var(--card-background-color);border-radius:12px;box-shadow:0 8px 32px #0008}.dialog h2{margin:0;padding:20px 24px;border-bottom:1px solid var(--divider-color)}form{padding:20px 24px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.field.full{grid-column:1/-1}.group{grid-column:1/-1;border:1px solid var(--divider-color);border-radius:8px;padding:16px}.group-title{font-size:15px;font-weight:600;margin:0 0 14px}.group-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.field label{display:block;font-size:13px;color:var(--secondary-text-color);margin-bottom:6px}.field.checkbox label{display:inline-flex;align-items:center;gap:8px;margin-bottom:0}.field.checkbox input{width:auto;margin:0}.readonly input{color:var(--secondary-text-color)}ha-icon-picker{display:block}.buttons{display:flex;justify-content:flex-end;gap:10px;margin-top:24px}.button{width:auto;border:0;border-radius:6px;padding:10px 18px;cursor:pointer;font-weight:500}.button.primary{background:var(--primary-color);color:var(--text-primary-color)}.button.secondary{background:var(--secondary-background-color);color:var(--primary-text-color)}.error{padding:14px;background:var(--error-color);color:white;border-radius:6px;margin-bottom:16px}
@@ -202,7 +232,7 @@ class UniversalModbusPanel extends HTMLElement {
     const entry = this._entry;
     const entities = entry.profile.entities || [];
     const hubSelector = `<div class="hub-picker"><label for="hub">${this._t("Hub", "Hub")}</label><select class="hub" id="hub">${entries.map((item) => `<option value="${item.entry_id}" ${item.entry_id === this._entryId ? "selected" : ""}>${this._escape(item.title)}</option>`).join("")}</select></div>`;
-    const rows = this._sortedEntities(entities).map(({ entity, index }) => `<tr><td class="entity-icon">${entity.icon ? `<ha-icon icon="${this._escape(entity.icon)}"></ha-icon>` : ""}</td><td>${entry.entity_ids?.[entity.key] ? `<button class="entity-link" data-entity-id="${this._escape(entry.entity_ids[entity.key])}">${this._escape(entity.name)}</button>` : this._escape(entity.name)}</td><td>${this._escape(entity.platform === "toggle_switch" ? "ToggleSwitch" : entity.platform)}</td><td>${this._escape(entity.table)}</td><td>${this._escape(entity.register)}</td><td>${this._valueControl(entity)}</td><td class="actions"><button class="icon edit" data-index="${index}" title="${this._t("Edit", "Bearbeiten")}"><ha-icon icon="mdi:pencil"></ha-icon></button><button class="icon duplicate" data-index="${index}" title="${this._t("Duplicate", "Duplizieren")}"><ha-icon icon="mdi:content-copy"></ha-icon></button><button class="icon danger delete" data-index="${index}" title="${this._t("Delete", "L\u00F6schen")}"><ha-icon icon="mdi:delete"></ha-icon></button></td></tr>`).join("");
+    const rows = this._sortedEntities(entities).map(({ entity, index }) => `<tr><td class="entity-icon">${entity.icon ? `<ha-icon icon="${this._escape(entity.icon)}"></ha-icon>` : ""}</td><td>${entry.entity_ids?.[entity.key] ? `<button class="entity-link" data-entity-id="${this._escape(entry.entity_ids[entity.key])}">${this._escape(entity.name)}</button>` : this._escape(entity.name)}</td><td>${this._escape(entity.platform === "toggle_switch" ? "ToggleSwitch" : entity.platform)}</td><td>${this._escape(TABLE_LABELS[entity.table] || entity.table)}</td><td>${this._escape(entity.register)}</td><td>${this._valueControl(entity)}</td><td class="actions"><button class="icon edit" data-index="${index}" title="${this._t("Edit", "Bearbeiten")}"><ha-icon icon="mdi:pencil"></ha-icon></button><button class="icon duplicate" data-index="${index}" title="${this._t("Duplicate", "Duplizieren")}"><ha-icon icon="mdi:content-copy"></ha-icon></button><button class="icon danger delete" data-index="${index}" title="${this._t("Delete", "L\u00F6schen")}"><ha-icon icon="mdi:delete"></ha-icon></button></td></tr>`).join("");
     const h = entry.hub;
     const connected = entry.connected && entry.last_update_success;
     const metadata = [
@@ -220,8 +250,8 @@ class UniversalModbusPanel extends HTMLElement {
     const hubDiagnostics = `<div class="hub-diagnostics">${diagnostics.map(([label, value]) => `<div class="diagnostic"><span class="diagnostic-label">${this._escape(label)}</span><span class="diagnostic-value">${this._escape(value)}</span></div>`).join("")}</div>`;
     const deviceLink = entry.device_id ? `<a class="icon device-hub" href="/config/devices/device/${encodeURIComponent(entry.device_id)}" title="${this._t("Open device", "Ger\u00E4t \u00F6ffnen")}" aria-label="${this._t("Open device", "Ger\u00E4t \u00F6ffnen")}"><ha-icon icon="mdi:open-in-new"></ha-icon></a>` : "";
     const actions = `<div class="header-actions">${hubSelector}${deviceLink}<button class="icon import-hub" title="${this._t("Import hub", "Hub importieren")}"><ha-icon icon="mdi:upload"></ha-icon></button><button class="icon export-hub" title="${this._t("Export hub", "Hub exportieren")}"><ha-icon icon="mdi:download"></ha-icon></button><button class="icon regenerate-keys" title="${this._t("Regenerate entity keys", "Entit\u00E4ts-Keys neu generieren")}"><ha-icon icon="mdi:key-change"></ha-icon></button><button class="icon cleanup-entities" title="${this._t("Remove orphaned entities", "Entit\u00E4ts-Leichen entfernen")}"><ha-icon icon="mdi:broom"></ha-icon></button><button class="icon add-hub" title="${this._t("Add hub", "Hub hinzuf\u00FCgen")}"><ha-icon icon="mdi:plus"></ha-icon></button><button class="icon edit-hub" title="${this._t("Edit hub", "Hub bearbeiten")}"><ha-icon icon="mdi:pencil"></ha-icon></button><button class="icon danger delete-hub" title="${this._t("Delete hub", "Hub l\u00F6schen")}"><ha-icon icon="mdi:delete"></ha-icon></button><input type="file" class="hub-file" accept="application/json,.json" hidden></div>`;
-    this.shadowRoot.innerHTML = `<div class="page">${this._header(actions)}<div class="hub-card card"><div class="hub-main"><div class="hub-summary"><strong class="hub-title">${this._escape(entry.title)}</strong>${hubMetadata}<span class="hub-connection">${this._escape(h.host)}:${h.port} \u00B7 Unit ${h.slave} \u00B7 ${h.scan_interval}s</span></div><div class="hub-health"><span class="status ${connected ? "connected" : ""}">${connected ? this._t("Connected", "Verbunden") : this._t("Disconnected", "Nicht verbunden")}</span>${hubDiagnostics}</div></div></div><div class="toolbar"><button class="button secondary refresh">${this._t("Refresh values", "Werte aktualisieren")}</button></div><div class="card"><table><thead><tr><th></th>${this._sortHeader("name", this._t("Name", "Name"))}${this._sortHeader("platform", this._t("Type", "Typ"))}${this._sortHeader("table", this._t("Area", "Bereich"))}${this._sortHeader("register", this._t("Register", "Register"))}${this._sortHeader("value", this._t("Current value", "Aktueller Wert"))}<th></th></tr></thead><tbody>${rows}<tr class="add-row"><td colspan="6"></td><td><button class="icon add" title="${this._t("Add entity", "Entit\u00E4t hinzuf\u00FCgen")}"><ha-icon icon="mdi:plus"></ha-icon></button></td></tr></tbody></table></div></div>${this._styles()}`;
-    this.shadowRoot.querySelector("#hub").addEventListener("change", (event) => { this._entryId = event.target.value; this._render(); });
+    this.shadowRoot.innerHTML = `<div class="page">${this._header(actions)}<div class="hub-card card"><div class="hub-main"><div class="hub-summary"><strong class="hub-title">${this._escape(entry.title)}</strong>${hubMetadata}<span class="hub-connection">${this._escape(h.host)}:${h.port} \u00B7 Unit ${h.slave} \u00B7 ${h.scan_interval}s</span></div><div class="hub-health"><span class="status ${connected ? "connected" : ""}">${connected ? this._t("Connected", "Verbunden") : this._t("Disconnected", "Nicht verbunden")}</span>${hubDiagnostics}</div></div></div><div class="toolbar"><button class="button secondary refresh">${this._t("Refresh values", "Werte aktualisieren")}</button></div><div class="card entity-table" role="region" aria-label="${this._t("Entities", "Entit\u00E4ten")}" tabindex="0"><table><thead><tr><th></th>${this._sortHeader("name", this._t("Name", "Name"))}${this._sortHeader("platform", this._t("Type", "Typ"))}${this._sortHeader("table", this._t("Area", "Bereich"))}${this._sortHeader("register", this._t("Register", "Register"))}${this._sortHeader("value", this._t("Current value", "Aktueller Wert"))}<th></th></tr></thead><tbody>${rows}<tr class="add-row"><td colspan="6"></td><td><button class="icon add" title="${this._t("Add entity", "Entit\u00E4t hinzuf\u00FCgen")}"><ha-icon icon="mdi:plus"></ha-icon></button></td></tr></tbody></table></div></div>${this._styles()}`;
+    this.shadowRoot.querySelector("#hub").addEventListener("change", (event) => { this._setEntryId(event.target.value); this._render(); });
     this.shadowRoot.querySelector(".add-hub").addEventListener("click", () => this._openHubEditor());
     this.shadowRoot.querySelector(".edit-hub").addEventListener("click", () => this._openHubEditor(this._entryId));
     this.shadowRoot.querySelector(".delete-hub").addEventListener("click", () => this._deleteHub());
@@ -325,12 +355,12 @@ class UniversalModbusPanel extends HTMLElement {
     dialog.innerHTML = `<div class="dialog"><h2>${entry ? this._t("Edit hub", "Hub bearbeiten") : this._t("Add hub", "Hub hinzuf\u00FCgen")}</h2><form><div class="grid">${field("name", this._t("Hub name", "Hub-Name"), hub.name || entry?.title || "", "text", "required")}${field("manufacturer", this._t("Manufacturer", "Hersteller"), profile.manufacturer)}${field("model", this._t("Model", "Modell"), profile.model)}${field("description", this._t("Description", "Beschreibung"), profile.description)}<section class="group"><h3 class="group-title">${this._t("Communication", "Kommunikation")}</h3><div class="group-grid">${field("host", "Host", hub.host, "text", "required")}${field("port", "Port", hub.port, "number", 'min="1" max="65535"')}${field("slave", "Unit ID", hub.slave, "number", 'min="0" max="247"')}${secondsField("scan_interval", this._t("Scan interval", "Abfrageintervall"), hub.scan_interval)}${secondsField("timeout", this._t("Timeout", "Zeit\u00FCberschreitung"), hub.timeout)}${order("byte_order", this._t("Byte order", "Byte-Reihenfolge"), profile.defaults?.byte_order)}${order("word_order", this._t("Word order", "Wort-Reihenfolge"), profile.defaults?.word_order)}</div></section></div><div class="buttons"><button type="button" class="button secondary cancel">${this._t("Cancel", "Abbrechen")}</button><button class="button primary">${this._t("Save", "Speichern")}</button></div></form></div>`;
     this.shadowRoot.appendChild(dialog);
     dialog.querySelector(".cancel").addEventListener("click", () => dialog.remove());
-    dialog.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const values = Object.fromEntries(new FormData(event.target)); ["port", "slave", "scan_interval", "timeout"].forEach((key) => values[key] = Number(values[key])); const nextProfile = structuredClone(profile); Object.assign(nextProfile, { name: values.name, manufacturer: values.manufacturer, model: values.model, description: values.description }); nextProfile.defaults = { ...(nextProfile.defaults || {}), byte_order: values.byte_order, word_order: values.word_order }; const nextHub = { name: values.name, host: values.host, port: values.port, slave: values.slave, scan_interval: values.scan_interval, timeout: values.timeout }; try { const result = await this._hass.connection.sendMessagePromise({ type: "universal_modbus/hub/save", entry_id: entryId || undefined, hub: nextHub, profile: nextProfile }); this._entryId = result.entry_id; dialog.remove(); await this._refresh(); } catch (err) { alert(err.message || String(err)); } });
+    dialog.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const values = Object.fromEntries(new FormData(event.target)); ["port", "slave", "scan_interval", "timeout"].forEach((key) => values[key] = Number(values[key])); const nextProfile = structuredClone(profile); Object.assign(nextProfile, { name: values.name, manufacturer: values.manufacturer, model: values.model, description: values.description }); nextProfile.defaults = { ...(nextProfile.defaults || {}), byte_order: values.byte_order, word_order: values.word_order }; const nextHub = { name: values.name, host: values.host, port: values.port, slave: values.slave, scan_interval: values.scan_interval, timeout: values.timeout }; try { const result = await this._hass.connection.sendMessagePromise({ type: "universal_modbus/hub/save", entry_id: entryId || undefined, hub: nextHub, profile: nextProfile }); this._setEntryId(result.entry_id); dialog.remove(); await this._refresh(); } catch (err) { alert(err.message || String(err)); } });
   }
 
   async _deleteHub() {
     if (!confirm(this._t(`Delete hub \u201C${this._entry.title}\u201D?`, `Hub \u201E${this._entry.title}\u201C l\u00F6schen?`))) return;
-    await this._hass.connection.sendMessagePromise({ type: "universal_modbus/hub/delete", entry_id: this._entryId }); this._entryId = null; await this._refresh();
+    await this._hass.connection.sendMessagePromise({ type: "universal_modbus/hub/delete", entry_id: this._entryId }); this._setEntryId(null); await this._refresh();
   }
 
   _exportHub() {
@@ -379,7 +409,7 @@ class UniversalModbusPanel extends HTMLElement {
       const nextHub = { ...hub, host: values.host, port: Number(values.port), slave: Number(values.slave) };
       try {
         const result = await this._hass.connection.sendMessagePromise({ type: "universal_modbus/hub/save", hub: nextHub, profile });
-        this._entryId = result.entry_id;
+        this._setEntryId(result.entry_id);
         dialog.remove();
         await this._refresh();
       } catch (err) { alert(err.message || String(err)); }
@@ -411,7 +441,8 @@ class UniversalModbusPanel extends HTMLElement {
     return `<div class="field readonly"><label for="${name}">${label}</label><input id="${name}" type="text" value="${this._escape(value)}" readonly></div>`;
   }
   _select(name, label, options, none = false) {
-    const values = none ? [{ value: "", label: "None" }, ...options.map((value) => ({ value, label: value === "toggle_switch" ? "ToggleSwitch" : value }))] : options.map((value) => ({ value, label: value === "toggle_switch" ? "ToggleSwitch" : value }));
+    const optionLabel = (value) => TABLE_LABELS[value] || (value === "toggle_switch" ? "ToggleSwitch" : value);
+    const values = none ? [{ value: "", label: "None" }, ...options.map((value) => ({ value, label: optionLabel(value) }))] : options.map((value) => ({ value, label: optionLabel(value) }));
     return `<div class="field"><label for="${name}">${label}</label><select id="${name}" name="${name}">${values.map((item) => `<option value="${this._escape(item.value)}" ${String(this._draft[name] ?? "") === String(item.value) ? "selected" : ""}>${this._escape(item.label)}</option>`).join("")}</select></div>`;
   }
 

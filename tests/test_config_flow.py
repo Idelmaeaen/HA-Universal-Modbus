@@ -15,7 +15,11 @@ package = sys.modules.setdefault(
 )
 package.__path__ = [str(PACKAGE_PATH)]
 
-from custom_components.universal_modbus.config_flow import UniversalModbusOptionsFlow  # noqa: E402
+from custom_components.universal_modbus.config_flow import (  # noqa: E402
+    FEEDBACK_TABLE_OPTIONS,
+    TABLE_OPTIONS,
+    UniversalModbusOptionsFlow,
+)
 
 
 def _schema_keys(schema) -> set[str]:
@@ -67,6 +71,18 @@ def test_init_exposes_all_options_flow_steps() -> None:
         "import_profile",
         "export_profile",
     ]
+
+
+def test_register_areas_use_modbus_read_function_names() -> None:
+    expected = {
+        "coil": "0x01 Read Coils",
+        "discrete_input": "0x02 Read Discrete Inputs",
+        "holding_register": "0x03 Read Holding Registers",
+        "input_register": "0x04 Read Input Registers",
+    }
+
+    assert TABLE_OPTIONS == expected
+    assert FEEDBACK_TABLE_OPTIONS == {"": "None", **expected}
 
 
 def test_coil_sensor_schema_hides_options_and_enum_device_class() -> None:

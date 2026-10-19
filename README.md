@@ -95,6 +95,8 @@ Open **Universal Modbus** in the Home Assistant sidebar. From there you can:
 - Configure connection details and device metadata
 - Add, duplicate, edit, and delete entities
 - Sort entities and open their Home Assistant entity pages
+- Keep the selected hub when the page is reloaded or opened again
+- Scroll the entity table horizontally on narrow mobile screens
 - View connection status, response time, communication errors, and the last
   successful poll
 - Refresh values manually and control writable entities
@@ -142,12 +144,17 @@ history, dashboards, and automations.
 
 ### Register areas and data types
 
-| Register area | Access | Supported data types |
-| --- | --- | --- |
-| Coil | Read/write | `bool` |
-| Discrete input | Read-only | `bool` |
-| Holding register | Read/write | All supported types |
-| Input register | Read-only | All supported types |
+| Register area | Read function | Access | Supported data types |
+| --- | --- | --- | --- |
+| Coil | `0x01 Read Coils` | Read/write | `bool` |
+| Discrete input | `0x02 Read Discrete Inputs` | Read-only | `bool` |
+| Holding register | `0x03 Read Holding Registers` | Read/write | All supported types |
+| Input register | `0x04 Read Input Registers` | Read-only | All supported types |
+
+The register-area selectors show these Modbus function names so they can be
+matched directly with the terminology used in device documentation. Functions
+`0x01` through `0x04` read either one or multiple values, depending on the
+requested count; a separate read mode is therefore not required.
 
 `bool`, `int16`, and `uint16` use one bit or register. `int32`, `uint32`, and
 `float32` use two registers. `int64` and `uint64` use four registers.

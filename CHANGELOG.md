@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Register-area selectors now display the corresponding Modbus read function
+  codes and protocol names (`0x01` through `0x04`).
+- The sidebar editor now remembers the selected hub across page reloads and
+  later visits in the same browser.
+- The entity table can now be scrolled horizontally on narrow mobile screens,
+  keeping all controls accessible.
+
 ## 1.2.0 - 2026-10-19
 
 ### Added

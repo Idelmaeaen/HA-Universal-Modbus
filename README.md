@@ -131,6 +131,7 @@ area, and data type. The most important settings are:
 - Data type, scale, offset, unit, and displayed decimal places
 - Optional advanced read and write formulas
 - Optional feedback table and register
+- Modbus write mode for writable coils and holding registers
 - Write commands and pulse duration for switch-like entities
 - Minimum, maximum, and step for numbers
 - Value mappings for enum sensors and selects
@@ -163,6 +164,24 @@ history, dashboards, and automations.
   Modbus address than its write target.
 - Enum sensors can map raw values to text. Select options map displayed labels
   to integer values.
+
+### Write modes
+
+Writable coil and holding-register entities can select the exact Modbus write
+function required by the device documentation:
+
+| Register area | Mode | Function |
+| --- | --- | --- |
+| Coil | `Auto` | `0x05 Write Single Coil` |
+| Coil | `0x05 Write Single Coil` | Write one coil explicitly |
+| Coil | `0x0F Write Multiple Coils` | Write a list containing one coil |
+| Holding register | `Auto` | `0x06` for one register, `0x10` for multiple registers |
+| Holding register | `0x06 Write Single Register` | Write one 16-bit register explicitly |
+| Holding register | `0x10 Write Multiple Registers` | Write one or more registers as a list |
+
+`Auto` preserves the behavior of profiles created before version 1.2.0. The
+single-register option is unavailable for data types that occupy more than one
+register.
 
 ### Advanced calculations
 

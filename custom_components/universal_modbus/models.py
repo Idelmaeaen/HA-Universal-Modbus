@@ -16,6 +16,7 @@ SUPPORTED_PLATFORMS = {"sensor", "binary_sensor", "switch", "toggle_switch", "bu
 SUPPORTED_TABLES = {"coil", "discrete_input", "holding_register", "input_register"}
 SUPPORTED_DATA_TYPES = {"bool", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32"}
 SUPPORTED_ORDERS = {"big", "little"}
+SUPPORTED_WRITE_MODES = {"auto", "single", "multiple"}
 
 
 def automatic_count_for_data_type(data_type: str) -> int:
@@ -49,6 +50,7 @@ class ModbusEntityDefinition:
     byte_order: str = "big"
     word_order: str = "big"
     writable: bool = False
+    write_mode: str = "auto"
     feedback_table: str | None = None
     feedback_register: int | None = None
     command_on: int | bool = True
@@ -81,6 +83,8 @@ class ModbusEntityDefinition:
             raise ValueError(f"Table {entity.table} only supports bool data")
         if entity.byte_order not in SUPPORTED_ORDERS or entity.word_order not in SUPPORTED_ORDERS:
             raise ValueError("Unsupported byte or word order")
+        if entity.write_mode not in SUPPORTED_WRITE_MODES:
+            raise ValueError(f"Unsupported write mode: {entity.write_mode}")
         if entity.register < 0:
             raise ValueError("Register is invalid")
         if entity.advanced_calculation:
@@ -88,6 +92,17 @@ class ModbusEntityDefinition:
             if entity.writable:
                 validate_formula(entity.write_formula, "value")
         entity.count = automatic_count_for_data_type(entity.data_type)
+        if (
+            entity.write_mode == "single"
+            and entity.table == "holding_register"
+            and entity.count > 1
+        ):
+            raise ValueError("Write Single Register only supports one-register data types")
+        if entity.write_mode != "auto" and entity.table not in {
+            "coil",
+            "holding_register",
+        }:
+            raise ValueError("Explicit write modes require a writable register area")
         if entity.display_precision is not None and not 0 <= entity.display_precision <= 6:
             raise ValueError("Display precision must be between 0 and 6")
         if entity.feedback_table and entity.feedback_table not in SUPPORTED_TABLES:

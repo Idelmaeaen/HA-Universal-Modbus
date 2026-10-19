@@ -115,3 +115,32 @@ class ModbusEntityDefinitionTests(unittest.TestCase):
 
         self.assertEqual(entity.register, 4)
         self.assertEqual(entity.feedback_register, 8)
+
+    def test_defaults_write_mode_to_auto(self) -> None:
+        entity = ModbusEntityDefinition.from_dict(
+            {
+                "key": "setpoint",
+                "name": "Setpoint",
+                "platform": "number",
+                "table": "holding_register",
+                "register": 19,
+                "writable": True,
+            }
+        )
+
+        self.assertEqual(entity.write_mode, "auto")
+
+    def test_rejects_single_write_for_multi_register_data_type(self) -> None:
+        with self.assertRaisesRegex(ValueError, "one-register data types"):
+            ModbusEntityDefinition.from_dict(
+                {
+                    "key": "setpoint",
+                    "name": "Setpoint",
+                    "platform": "number",
+                    "table": "holding_register",
+                    "register": 19,
+                    "data_type": "float32",
+                    "writable": True,
+                    "write_mode": "single",
+                }
+            )

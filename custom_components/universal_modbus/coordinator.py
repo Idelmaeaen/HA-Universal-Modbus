@@ -309,12 +309,19 @@ class UniversalModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 if definition.table == "coil":
                     if definition.advanced_calculation:
                         value = apply_write_formula(value, definition)
-                    response = self._client.write_coil(
-                        definition.register, bool(value), **device
-                    )
+                    if definition.write_mode == "multiple":
+                        response = self._client.write_coils(
+                            definition.register, [bool(value)], **device
+                        )
+                    else:
+                        response = self._client.write_coil(
+                            definition.register, bool(value), **device
+                        )
                 elif definition.table == "holding_register":
                     registers = encode_registers(value, definition)
-                    if len(registers) == 1:
+                    if definition.write_mode == "single" or (
+                        definition.write_mode == "auto" and len(registers) == 1
+                    ):
                         response = self._client.write_register(
                             definition.register, registers[0], **device
                         )

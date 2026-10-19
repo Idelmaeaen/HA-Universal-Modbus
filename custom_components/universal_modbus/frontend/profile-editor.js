@@ -387,7 +387,7 @@ class UniversalModbusPanel extends HTMLElement {
   }
   _defaults() {
     const defaults = this._entry.profile.defaults || {};
-    return { name: "", key: "", platform: "sensor", table: "holding_register", register: 0, data_type: "int16", count: 1, scale: 1, offset: 0, advanced_calculation: false, read_formula: DEFAULT_READ_FORMULA, write_formula: DEFAULT_WRITE_FORMULA, unit: "", icon: "", device_class: "", state_class: "", display_precision: null, byte_order: defaults.byte_order || "big", word_order: defaults.word_order || "big", writable: false, feedback_table: "", feedback_register: 0, command_on: 1, command_off: 0, pulse_ms: 0, minimum: 0, maximum: 100, step: 1, options: {} };
+    return { name: "", key: "", platform: "sensor", table: "holding_register", register: 0, data_type: "int16", count: 1, scale: 1, offset: 0, advanced_calculation: false, read_formula: DEFAULT_READ_FORMULA, write_formula: DEFAULT_WRITE_FORMULA, unit: "", icon: "", device_class: "", state_class: "", display_precision: null, byte_order: defaults.byte_order || "big", word_order: defaults.word_order || "big", writable: false, write_mode: "auto", feedback_table: "", feedback_register: 0, command_on: 1, command_off: 0, pulse_ms: 0, minimum: 0, maximum: 100, step: 1, options: {} };
   }
 
   _openEditor(index = null, removeOnCancel = false, regenerateKeyOnSave = false) {
@@ -413,6 +413,22 @@ class UniversalModbusPanel extends HTMLElement {
   _select(name, label, options, none = false) {
     const values = none ? [{ value: "", label: "None" }, ...options.map((value) => ({ value, label: value === "toggle_switch" ? "ToggleSwitch" : value }))] : options.map((value) => ({ value, label: value === "toggle_switch" ? "ToggleSwitch" : value }));
     return `<div class="field"><label for="${name}">${label}</label><select id="${name}" name="${name}">${values.map((item) => `<option value="${this._escape(item.value)}" ${String(this._draft[name] ?? "") === String(item.value) ? "selected" : ""}>${this._escape(item.label)}</option>`).join("")}</select></div>`;
+  }
+
+  _writeModeSelect() {
+    let options = [{ value: "auto", label: "Auto" }];
+    if (this._draft.table === "coil") {
+      options.push(
+        { value: "single", label: "0x05 Write Single Coil" },
+        { value: "multiple", label: "0x0F Write Multiple Coils" },
+      );
+    } else if (this._draft.table === "holding_register") {
+      if (this._draft.count === 1) options.push({ value: "single", label: "0x06 Write Single Register" });
+      options.push({ value: "multiple", label: "0x10 Write Multiple Registers" });
+    } else {
+      return "";
+    }
+    return `<div class="field"><label for="write_mode">${this._t("Write mode", "Schreibmodus")}</label><select id="write_mode" name="write_mode">${options.map((item) => `<option value="${item.value}" ${String(this._draft.write_mode || "auto") === item.value ? "selected" : ""}>${item.label}</option>`).join("")}</select></div>`;
   }
 
 
@@ -484,7 +500,8 @@ class UniversalModbusPanel extends HTMLElement {
     const readOnlyPlatform = ["switch", "toggle_switch", "button", "number", "select"].includes(d.platform);
     const readOnly = readOnlyPlatform && d.writable === false;
     const readOnlyField = readOnlyPlatform ? this._checkbox("read_only", "Read Only", readOnly) : "";
-    const modbusDetails = `${readOnlyField}${feedback ? `${this._field("feedback_register", this._t("Feedback register", "R\u00FCckmelderegister"), "number", 'min="0"')}${switchLike ? `${this._field("command_on", this._t("On command", "Einschaltwert"), "number")}${this._field("command_off", this._t("Off command", "Ausschaltwert"), "number")}` : ""}` : ""}`;
+    const writeModeField = readOnlyPlatform ? this._writeModeSelect() : "";
+    const modbusDetails = `${readOnlyField}${writeModeField}${feedback ? `${this._field("feedback_register", this._t("Feedback register", "R\u00FCckmelderegister"), "number", 'min="0"')}${switchLike ? `${this._field("command_on", this._t("On command", "Einschaltwert"), "number")}${this._field("command_off", this._t("Off command", "Ausschaltwert"), "number")}` : ""}` : ""}`;
     const properties = `${this._select("platform", this._t("Entity type", "Entit\u00E4tstyp"), PLATFORMS)}${deviceClasses.length ? this._select("device_class", this._t("Device class", "Ger\u00E4teklasse"), deviceClasses, true) : ""}${d.platform === "sensor" && !hasOptions ? this._select("state_class", this._t("State class", "Zustandsklasse"), this._data.state_classes, true) : ""}${unitField}${this._iconField()}${analog && ["sensor", "number"].includes(d.platform) ? this._precisionSelect() : ""}${analog ? `${this._field("offset", "Offset", "number", 'step="any"')}${this._field("scale", this._t("Scale", "Skalierung"), "number", 'step="any"')}` : ""}${pulseLike ? this._field("pulse_ms", this._t("Pulse duration (ms)", "Impulsdauer (ms)"), "number", 'min="0"') : ""}${d.platform === "number" ? `${this._field("minimum", "Minimum", "number", 'step="any"')}${this._field("maximum", "Maximum", "number", 'step="any"')}${this._field("step", this._t("Step", "Schrittweite"), "number", 'step="any" min="0.000001"')}` : ""}${["sensor", "binary_sensor", "select"].includes(d.platform) && !coilSensor ? `<div class="field full"><label for="options_json">${this._t("Options as JSON", "Optionen als JSON")}</label><textarea id="options_json" name="options_json" rows="5">${this._escape(JSON.stringify(d.options || {}, null, 2))}</textarea></div>` : ""}`;
     const formulaHelp = this._t(
       "Read formulas use register_value; write formulas use value. scale and offset are available in both. Supported: +, -, *, /, //, %, comparisons, if/else, abs, min, max, round, int, float, and bool. Examples: None if register_value == 65535 else register_value / 10; 100 if register_value > 0 else 0.",
@@ -523,6 +540,7 @@ class UniversalModbusPanel extends HTMLElement {
     data.device_class ||= null; data.state_class = data.platform === "sensor" ? (data.state_class || null) : null;
     data.unit ||= null; data.icon ||= null; data.display_precision = data.display_precision === "" || data.display_precision === null || data.display_precision === undefined ? null : Number.parseInt(data.display_precision, 10); if (!["sensor", "number"].includes(data.platform) || data.data_type === "bool") data.display_precision = null; data.pulse_ms = ["toggle_switch", "button"].includes(data.platform) ? (data.pulse_ms || null) : null;
     data.writable = ["switch", "toggle_switch", "button", "number", "select"].includes(data.platform) && data.read_only !== "on";
+    if (!["coil", "holding_register"].includes(data.table)) data.write_mode = "auto";
     data.advanced_calculation = data.advanced_calculation === "on";
     delete data.read_only;
     delete data.options_json;

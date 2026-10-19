@@ -147,3 +147,72 @@ def test_entity_input_keeps_advanced_formulas() -> None:
     )
 
     assert _flow()._entity_from_input(values, "status").read_formula == "register_value / 10"
+
+
+def test_write_mode_schema_uses_modbus_function_names() -> None:
+    coil_schema = UniversalModbusOptionsFlow._entity_details_schema(
+        _entity_input(platform="switch", device_class="")
+    )
+    register_schema = UniversalModbusOptionsFlow._entity_details_schema(
+        _entity_input(
+            platform="number",
+            table="holding_register",
+            data_type="uint16",
+            device_class="",
+        )
+    )
+
+    coil_modes = next(
+        validator.container
+        for key, validator in coil_schema.schema.items()
+        if key.schema == "write_mode"
+    )
+    register_modes = next(
+        validator.container
+        for key, validator in register_schema.schema.items()
+        if key.schema == "write_mode"
+    )
+
+    assert coil_modes == {
+        "auto": "Auto",
+        "single": "0x05 Write Single Coil",
+        "multiple": "0x0F Write Multiple Coils",
+    }
+    assert register_modes == {
+        "auto": "Auto",
+        "single": "0x06 Write Single Register",
+        "multiple": "0x10 Write Multiple Registers",
+    }
+
+
+def test_multi_register_data_type_hides_single_write_mode() -> None:
+    schema = UniversalModbusOptionsFlow._entity_details_schema(
+        _entity_input(
+            platform="number",
+            table="holding_register",
+            data_type="float32",
+            device_class="",
+        )
+    )
+    write_modes = next(
+        validator.container
+        for key, validator in schema.schema.items()
+        if key.schema == "write_mode"
+    )
+
+    assert write_modes == {
+        "auto": "Auto",
+        "multiple": "0x10 Write Multiple Registers",
+    }
+
+
+def test_entity_input_keeps_write_mode() -> None:
+    values = _entity_input(
+        platform="number",
+        table="holding_register",
+        data_type="uint16",
+        device_class="",
+        write_mode="multiple",
+    )
+
+    assert _flow()._entity_from_input(values, "setpoint").write_mode == "multiple"

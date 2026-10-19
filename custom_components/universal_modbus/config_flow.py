@@ -447,6 +447,26 @@ class UniversalModbusOptionsFlow(config_entries.OptionsFlow):
             )
         if platform in WRITABLE_PLATFORMS:
             schema[vol.Optional("read_only", default=not value.get("writable", platform in WRITABLE_PLATFORMS))] = bool
+            if table == "coil":
+                write_modes = {
+                    "auto": "Auto",
+                    "single": "0x05 Write Single Coil",
+                    "multiple": "0x0F Write Multiple Coils",
+                }
+                schema[vol.Required(
+                    "write_mode", default=value.get("write_mode", "auto")
+                )] = vol.In(write_modes)
+            elif table == "holding_register":
+                write_modes = {"auto": "Auto"}
+                if automatic_count_for_data_type(data_type) == 1:
+                    write_modes["single"] = "0x06 Write Single Register"
+                write_modes["multiple"] = "0x10 Write Multiple Registers"
+                write_mode = value.get("write_mode", "auto")
+                if write_mode not in write_modes:
+                    write_mode = "auto"
+                schema[vol.Required(
+                    "write_mode", default=write_mode
+                )] = vol.In(write_modes)
         if feedback_table:
             schema[vol.Optional("feedback_register", default=value.get("feedback_register") or 0)] = vol.All(
                 int, vol.Range(min=0)
@@ -524,6 +544,7 @@ class UniversalModbusOptionsFlow(config_entries.OptionsFlow):
                 "byte_order": defaults["byte_order"],
                 "word_order": defaults["word_order"],
                 "writable": platform in WRITABLE_PLATFORMS and not user_input.get("read_only", False),
+                "write_mode": user_input.get("write_mode", "auto"),
                 "feedback_table": user_input.get("feedback_table") or None,
                 "feedback_register": user_input.get("feedback_register") if user_input.get("feedback_table") else None,
                 "command_on": user_input.get("command_on", 1),

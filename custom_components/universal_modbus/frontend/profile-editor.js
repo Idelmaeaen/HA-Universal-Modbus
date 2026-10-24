@@ -48,6 +48,7 @@ class UniversalModbusPanel extends HTMLElement {
     this._tableScrollActiveUntil = 0;
     this._sortColumn = null;
     this._sortDirection = "asc";
+    this._renderedValueTokens = new Map();
   }
 
   set hass(hass) {
@@ -94,11 +95,21 @@ class UniversalModbusPanel extends HTMLElement {
     if (this._refreshing || this._refreshBlocked()) return;
     this._refreshing = true;
     try {
+      const previousEntryId = this._entryId;
+      const previousRenderSignature = this._renderSignature(this._data);
       const data = await this._hass.connection.sendMessagePromise({ type: "universal_modbus/editor/get" });
       if (this._refreshBlocked()) return;
       this._data = data;
       if (!data.entries.some((item) => item.entry_id === this._entryId)) this._setEntryId(data.entries[0]?.entry_id);
-      this._render();
+      if (
+        previousEntryId === this._entryId
+        && previousRenderSignature === this._renderSignature(data)
+        && this.shadowRoot.querySelector(".entity-table")
+      ) {
+        this._updateLiveView();
+      } else {
+        this._render();
+      }
     } catch (_err) { /* Keep the last successful view. */ }
     finally { this._refreshing = false; }
   }
@@ -225,6 +236,88 @@ class UniversalModbusPanel extends HTMLElement {
     }).format(date);
   }
 
+  _renderSignature(data) {
+    return JSON.stringify({
+      version: data?.version,
+      device_classes: data?.device_classes,
+      state_classes: data?.state_classes,
+      units: data?.units,
+      entries: (data?.entries || []).map(({
+        values: _values,
+        connected: _connected,
+        last_update_success: _lastUpdateSuccess,
+        entity_errors: _entityErrors,
+        last_response_time_ms: _lastResponseTime,
+        communication_error_count: _communicationErrors,
+        last_successful_update: _lastSuccessfulUpdate,
+        ...entry
+      }) => entry),
+    });
+  }
+
+  _diagnostics(entry) {
+    return [
+      [this._t("Response time", "Antwortzeit"), entry.last_response_time_ms == null ? "\u2014" : `${entry.last_response_time_ms} ms`],
+      [this._t("Communication errors", "Kommunikationsfehler"), entry.communication_error_count ?? 0],
+      [this._t("Last successful poll", "Letzte erfolgreiche Abfrage"), this._formatDateTime(entry.last_successful_update)],
+    ];
+  }
+
+  _valueToken(entity) {
+    const current = this._entry.values?.[entity.key];
+    return current === undefined ? "undefined" : JSON.stringify(current);
+  }
+
+  _wireValueControls(root) {
+    root.querySelectorAll(".value-switch").forEach((control) => control.addEventListener("change", () => this._writeValue(control.dataset.key, control.checked, control)));
+    root.querySelectorAll(".value-button").forEach((control) => control.addEventListener("click", () => this._writeValue(control.dataset.key, undefined, control)));
+    root.querySelectorAll(".write-number").forEach((control) => control.addEventListener("change", () => this._writeValue(control.dataset.key, control.value, control)));
+    root.querySelectorAll(".write-select").forEach((control) => control.addEventListener("change", () => this._writeValue(control.dataset.key, control.value, control)));
+  }
+
+  _updateLiveView() {
+    const entry = this._entry;
+    if (!entry) return;
+    const connected = entry.connected && entry.last_update_success;
+    const status = this.shadowRoot.querySelector(".status");
+    if (status) {
+      status.classList.toggle("connected", connected);
+      status.textContent = connected ? this._t("Connected", "Verbunden") : this._t("Disconnected", "Nicht verbunden");
+    }
+    const diagnosticValues = this.shadowRoot.querySelectorAll(".diagnostic-value");
+    this._diagnostics(entry).forEach(([_label, value], index) => {
+      if (diagnosticValues[index]) diagnosticValues[index].textContent = value;
+    });
+    const entities = entry.profile.entities || [];
+    const valueCells = new Map(
+      Array.from(this.shadowRoot.querySelectorAll(".entity-value"))
+        .map((cell) => [Number(cell.dataset.index), cell])
+    );
+    entities.forEach((entity, index) => {
+      const token = this._valueToken(entity);
+      if (this._renderedValueTokens.get(index) === token) return;
+      const cell = valueCells.get(index);
+      if (!cell) return;
+      cell.innerHTML = this._valueControl(entity);
+      this._wireValueControls(cell);
+      this._renderedValueTokens.set(index, token);
+    });
+    if (this._sortColumn === "value") {
+      const tbody = this.shadowRoot.querySelector(".entity-table tbody");
+      const addRow = tbody?.querySelector(".add-row");
+      if (tbody && addRow) {
+        const rows = new Map(
+          Array.from(tbody.querySelectorAll("tr[data-entity-index]"))
+            .map((row) => [Number(row.dataset.entityIndex), row])
+        );
+        this._sortedEntities(entities).forEach(({ index }) => {
+          const row = rows.get(index);
+          if (row) tbody.insertBefore(row, addRow);
+        });
+      }
+    }
+  }
+
   _captureScrollPositions() {
     const positions = [];
     const seen = new Set();
@@ -271,7 +364,7 @@ class UniversalModbusPanel extends HTMLElement {
     const entry = this._entry;
     const entities = entry.profile.entities || [];
     const hubSelector = `<div class="hub-picker"><label for="hub">${this._t("Hub", "Hub")}</label><select class="hub" id="hub">${entries.map((item) => `<option value="${item.entry_id}" ${item.entry_id === this._entryId ? "selected" : ""}>${this._escape(item.title)}</option>`).join("")}</select></div>`;
-    const rows = this._sortedEntities(entities).map(({ entity, index }) => `<tr><td class="entity-icon">${entity.icon ? `<ha-icon icon="${this._escape(entity.icon)}"></ha-icon>` : ""}</td><td>${entry.entity_ids?.[entity.key] ? `<button class="entity-link" data-entity-id="${this._escape(entry.entity_ids[entity.key])}">${this._escape(entity.name)}</button>` : this._escape(entity.name)}</td><td>${this._escape(entity.platform === "toggle_switch" ? "ToggleSwitch" : entity.platform)}</td><td>${this._escape(TABLE_LABELS[entity.table] || entity.table)}</td><td>${this._escape(entity.register)}</td><td>${this._valueControl(entity)}</td><td class="actions"><button class="icon edit" data-index="${index}" title="${this._t("Edit", "Bearbeiten")}"><ha-icon icon="mdi:pencil"></ha-icon></button><button class="icon duplicate" data-index="${index}" title="${this._t("Duplicate", "Duplizieren")}"><ha-icon icon="mdi:content-copy"></ha-icon></button><button class="icon danger delete" data-index="${index}" title="${this._t("Delete", "L\u00F6schen")}"><ha-icon icon="mdi:delete"></ha-icon></button></td></tr>`).join("");
+    const rows = this._sortedEntities(entities).map(({ entity, index }) => `<tr data-entity-index="${index}"><td class="entity-icon">${entity.icon ? `<ha-icon icon="${this._escape(entity.icon)}"></ha-icon>` : ""}</td><td>${entry.entity_ids?.[entity.key] ? `<button class="entity-link" data-entity-id="${this._escape(entry.entity_ids[entity.key])}">${this._escape(entity.name)}</button>` : this._escape(entity.name)}</td><td>${this._escape(entity.platform === "toggle_switch" ? "ToggleSwitch" : entity.platform)}</td><td>${this._escape(TABLE_LABELS[entity.table] || entity.table)}</td><td>${this._escape(entity.register)}</td><td class="entity-value" data-index="${index}">${this._valueControl(entity)}</td><td class="actions"><button class="icon edit" data-index="${index}" title="${this._t("Edit", "Bearbeiten")}"><ha-icon icon="mdi:pencil"></ha-icon></button><button class="icon duplicate" data-index="${index}" title="${this._t("Duplicate", "Duplizieren")}"><ha-icon icon="mdi:content-copy"></ha-icon></button><button class="icon danger delete" data-index="${index}" title="${this._t("Delete", "L\u00F6schen")}"><ha-icon icon="mdi:delete"></ha-icon></button></td></tr>`).join("");
     const h = entry.hub;
     const connected = entry.connected && entry.last_update_success;
     const metadata = [
@@ -281,16 +374,13 @@ class UniversalModbusPanel extends HTMLElement {
     ].filter((item) => item[1]);
     const hubError = entry.error ? `<div class="hub-error"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span><b>${this._t("Current error", "Aktueller Fehler")}:</b> ${this._escape(entry.error)}</span></div>` : "";
     const hubMetadata = (metadata.length ? `<div class="hub-meta">${metadata.map((item) => `<b>${this._escape(item[0])}</b><span>${this._escape(item[1])}</span>`).join("")}</div>` : "") + hubError;
-    const diagnostics = [
-      [this._t("Response time", "Antwortzeit"), entry.last_response_time_ms == null ? "\u2014" : `${entry.last_response_time_ms} ms`],
-      [this._t("Communication errors", "Kommunikationsfehler"), entry.communication_error_count ?? 0],
-      [this._t("Last successful poll", "Letzte erfolgreiche Abfrage"), this._formatDateTime(entry.last_successful_update)],
-    ];
+    const diagnostics = this._diagnostics(entry);
     const hubDiagnostics = `<div class="hub-diagnostics">${diagnostics.map(([label, value]) => `<div class="diagnostic"><span class="diagnostic-label">${this._escape(label)}</span><span class="diagnostic-value">${this._escape(value)}</span></div>`).join("")}</div>`;
     const deviceLink = entry.device_id ? `<a class="icon device-hub" href="/config/devices/device/${encodeURIComponent(entry.device_id)}" title="${this._t("Open device", "Ger\u00E4t \u00F6ffnen")}" aria-label="${this._t("Open device", "Ger\u00E4t \u00F6ffnen")}"><ha-icon icon="mdi:open-in-new"></ha-icon></a>` : "";
     const actions = `<div class="header-actions">${hubSelector}${deviceLink}<button class="icon import-hub" title="${this._t("Import hub", "Hub importieren")}"><ha-icon icon="mdi:upload"></ha-icon></button><button class="icon export-hub" title="${this._t("Export hub", "Hub exportieren")}"><ha-icon icon="mdi:download"></ha-icon></button><button class="icon regenerate-keys" title="${this._t("Regenerate entity keys", "Entit\u00E4ts-Keys neu generieren")}"><ha-icon icon="mdi:key-change"></ha-icon></button><button class="icon cleanup-entities" title="${this._t("Remove orphaned entities", "Entit\u00E4ts-Leichen entfernen")}"><ha-icon icon="mdi:broom"></ha-icon></button><button class="icon add-hub" title="${this._t("Add hub", "Hub hinzuf\u00FCgen")}"><ha-icon icon="mdi:plus"></ha-icon></button><button class="icon edit-hub" title="${this._t("Edit hub", "Hub bearbeiten")}"><ha-icon icon="mdi:pencil"></ha-icon></button><button class="icon danger delete-hub" title="${this._t("Delete hub", "Hub l\u00F6schen")}"><ha-icon icon="mdi:delete"></ha-icon></button><input type="file" class="hub-file" accept="application/json,.json" hidden></div>`;
     this.shadowRoot.innerHTML = `<div class="page">${this._header(actions)}<div class="hub-card card"><div class="hub-main"><div class="hub-summary"><strong class="hub-title">${this._escape(entry.title)}</strong>${hubMetadata}<span class="hub-connection">${this._escape(h.host)}:${h.port} \u00B7 Unit ${h.slave} \u00B7 ${h.scan_interval}s</span></div><div class="hub-health"><span class="status ${connected ? "connected" : ""}">${connected ? this._t("Connected", "Verbunden") : this._t("Disconnected", "Nicht verbunden")}</span>${hubDiagnostics}</div></div></div><div class="toolbar"><button class="button secondary refresh">${this._t("Refresh values", "Werte aktualisieren")}</button></div><div class="card entity-table" role="region" aria-label="${this._t("Entities", "Entit\u00E4ten")}" tabindex="0"><table><thead><tr><th></th>${this._sortHeader("name", this._t("Name", "Name"))}${this._sortHeader("platform", this._t("Type", "Typ"))}${this._sortHeader("table", this._t("Area", "Bereich"))}${this._sortHeader("register", this._t("Register", "Register"))}${this._sortHeader("value", this._t("Current value", "Aktueller Wert"))}<th></th></tr></thead><tbody>${rows}<tr class="add-row"><td colspan="6"></td><td><button class="icon add" title="${this._t("Add entity", "Entit\u00E4t hinzuf\u00FCgen")}"><ha-icon icon="mdi:plus"></ha-icon></button></td></tr></tbody></table></div></div>${this._styles()}`;
     const entityTable = this.shadowRoot.querySelector(".entity-table");
+    this._renderedValueTokens = new Map(entities.map((entity, index) => [index, this._valueToken(entity)]));
     entityTable.scrollLeft = this._tableScrollLeft;
     entityTable.addEventListener("scroll", () => {
       this._tableScrollLeft = entityTable.scrollLeft;
@@ -318,10 +408,7 @@ class UniversalModbusPanel extends HTMLElement {
     this.shadowRoot.querySelectorAll(".edit").forEach((button) => button.addEventListener("click", () => this._openEditor(Number(button.dataset.index))));
     this.shadowRoot.querySelectorAll(".duplicate").forEach((button) => button.addEventListener("click", () => this._duplicate(Number(button.dataset.index))));
     this.shadowRoot.querySelectorAll(".delete").forEach((button) => button.addEventListener("click", () => this._delete(Number(button.dataset.index))));
-    this.shadowRoot.querySelectorAll(".value-switch").forEach((control) => control.addEventListener("change", () => this._writeValue(control.dataset.key, control.checked, control)));
-    this.shadowRoot.querySelectorAll(".value-button").forEach((control) => control.addEventListener("click", () => this._writeValue(control.dataset.key, undefined, control)));
-    this.shadowRoot.querySelectorAll(".write-number").forEach((control) => control.addEventListener("change", () => this._writeValue(control.dataset.key, control.value, control)));
-    this.shadowRoot.querySelectorAll(".write-select").forEach((control) => control.addEventListener("change", () => this._writeValue(control.dataset.key, control.value, control)));
+    this._wireValueControls(this.shadowRoot);
     this._restoreScrollPositions(scrollPositions);
   }
 

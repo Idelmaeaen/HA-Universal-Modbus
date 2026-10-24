@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.2 - 2026-10-24
+
+### Fixed
+
+- The once-per-second sidebar refresh now updates live values and diagnostics
+  in place instead of rebuilding the complete entity table, preventing the
+  page from moving while it is scrolled.
+
 ## 1.3.1 - 2026-10-24
 
 ### Fixed

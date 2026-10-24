@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.1 - 2026-10-24
+
+### Fixed
+
+- The sidebar now preserves the vertical scroll position of the entity list
+  while live Modbus values are refreshed.
+
 ## 1.3.0 - 2026-10-20
 
 ### Changed

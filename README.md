@@ -109,8 +109,9 @@ The upload and download buttons import or export the hub configuration and its
 entities. For privacy, exports omit the IP address and exporter identity; the IP
 address is requested during import.
 
-On narrow screens, the entity table can be scrolled horizontally. The selected
-position remains unchanged while live Modbus values are refreshed.
+The entity list keeps its vertical scroll position while live Modbus values are
+refreshed. On narrow screens, the table can also be scrolled horizontally, and
+that position is preserved as well.
 
 ### Screenshots
 

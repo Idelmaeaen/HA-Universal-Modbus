@@ -150,7 +150,7 @@ class UniversalModbusPanel extends HTMLElement {
 
   _styles() {
     return `<style>
-      :host{display:block;color:var(--primary-text-color);background:var(--primary-background-color);min-height:100vh;font-family:var(--paper-font-body1_-_font-family,Roboto,sans-serif)}
+      :host{display:block;color:var(--primary-text-color);background:var(--primary-background-color);min-height:100vh;font-family:var(--paper-font-body1_-_font-family,Roboto,sans-serif);overflow-anchor:none}
       .page{max-width:1100px;margin:0 auto;padding:24px}.center{padding:64px;text-align:center}
       .header{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:20px}.brand{display:flex;align-items:center;gap:12px}.brand img{width:44px;height:44px;object-fit:contain}.input-unit{position:relative}.input-unit input{padding-right:34px}.input-unit span{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--secondary-text-color);pointer-events:none}.brand-text{display:flex;flex-direction:column;gap:3px}.brand h1{font-size:24px;margin:0}.version{font-size:12px;color:var(--secondary-text-color)}.header-actions,.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.hub-picker{display:flex;align-items:center;gap:8px}.hub-picker label{font-size:13px;color:var(--secondary-text-color)}.hub{min-width:240px}.hub-card{padding:16px;margin-bottom:16px}.hub-card span{color:var(--secondary-text-color)}.hub-main{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:start}.hub-summary{display:flex;flex-direction:column;gap:8px;min-width:0}.hub-title{font-size:1.2rem;line-height:1.3}.hub-connection{color:var(--secondary-text-color)}.hub-meta{display:grid;grid-template-columns:max-content 1fr;column-gap:10px;row-gap:2px;color:var(--secondary-text-color)}.hub-meta b{font-weight:500;color:var(--primary-text-color)}.hub-health{display:flex;flex-direction:column;align-items:flex-end;gap:9px}.hub-diagnostics{display:flex;align-items:flex-start;justify-content:flex-end;gap:18px}.diagnostic{display:flex;flex-direction:column;align-items:flex-end;gap:2px;white-space:nowrap}.diagnostic-label{font-size:11px}.diagnostic-value{font-size:13px;color:var(--primary-text-color)!important}.status{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 10px;font-size:12px;line-height:1;background:var(--secondary-background-color);white-space:nowrap}.status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--error-color)}.status.connected::before{background:var(--success-color, #43a047)}.toolbar{margin-bottom:16px}
       .hub-error{display:flex;align-items:flex-start;gap:7px;color:var(--error-color);font-size:13px;line-height:1.4;overflow-wrap:anywhere}.hub-error ha-icon{flex:0 0 auto;width:18px;height:18px}
@@ -225,7 +225,38 @@ class UniversalModbusPanel extends HTMLElement {
     }).format(date);
   }
 
+  _captureScrollPositions() {
+    const positions = [];
+    const seen = new Set();
+    let element = this;
+    while (element) {
+      if (!seen.has(element) && (element.scrollTop || element.scrollLeft)) {
+        positions.push({ element, top: element.scrollTop, left: element.scrollLeft });
+        seen.add(element);
+      }
+      if (element.parentElement) {
+        element = element.parentElement;
+        continue;
+      }
+      const root = element.getRootNode?.();
+      element = root instanceof ShadowRoot ? root.host : null;
+    }
+    const documentScroller = document.scrollingElement;
+    if (documentScroller && !seen.has(documentScroller) && (documentScroller.scrollTop || documentScroller.scrollLeft)) {
+      positions.push({ element: documentScroller, top: documentScroller.scrollTop, left: documentScroller.scrollLeft });
+    }
+    return positions;
+  }
+
+  _restoreScrollPositions(positions) {
+    positions.forEach(({ element, top, left }) => {
+      element.scrollTop = top;
+      element.scrollLeft = left;
+    });
+  }
+
   _render() {
+    const scrollPositions = this._captureScrollPositions();
     const currentEntityTable = this.shadowRoot.querySelector(".entity-table");
     if (currentEntityTable) this._tableScrollLeft = currentEntityTable.scrollLeft;
     const entries = this._data?.entries || [];
@@ -234,6 +265,7 @@ class UniversalModbusPanel extends HTMLElement {
       this.shadowRoot.querySelector(".add-hub").addEventListener("click", () => this._openHubEditor());
       this.shadowRoot.querySelector(".import-hub").addEventListener("click", () => this.shadowRoot.querySelector(".hub-file").click());
       this.shadowRoot.querySelector(".hub-file").addEventListener("change", (event) => this._importHub(event.target.files[0], event.target));
+      this._restoreScrollPositions(scrollPositions);
       return;
     }
     const entry = this._entry;
@@ -290,6 +322,7 @@ class UniversalModbusPanel extends HTMLElement {
     this.shadowRoot.querySelectorAll(".value-button").forEach((control) => control.addEventListener("click", () => this._writeValue(control.dataset.key, undefined, control)));
     this.shadowRoot.querySelectorAll(".write-number").forEach((control) => control.addEventListener("change", () => this._writeValue(control.dataset.key, control.value, control)));
     this.shadowRoot.querySelectorAll(".write-select").forEach((control) => control.addEventListener("change", () => this._writeValue(control.dataset.key, control.value, control)));
+    this._restoreScrollPositions(scrollPositions);
   }
 
 

@@ -65,6 +65,8 @@
         "description": "Erstellt eine Home-Assistant-Entität auf Basis eines Modbus-Werts.",
         "data": {
           "name": "Name",
+          "unit_id": "Unit-ID (optional, Hub-Standard)",
+          "scan_interval": "Abfrageintervall in Sekunden (optional, Hub-Standard)",
           "platform": "Entitätstyp",
           "table": "Bereich",
           "data_type": "Datentyp",
@@ -112,6 +114,7 @@
           "device_class": "Geräteklasse",
           "state_class": "Zustandsklasse",
           "feedback_table": "Rückmeldung",
+          "write_confirmation": "Schreibvorgang sofort per Rückmeldung prüfen",
           "write_mode": "Schreibmodus",
           "command_on": "Einschaltwert",
           "command_off": "Ausschaltwert",
@@ -134,6 +137,8 @@
         "title": "Entität bearbeiten",
         "data": {
           "name": "Name",
+          "unit_id": "Unit-ID (optional, Hub-Standard)",
+          "scan_interval": "Abfrageintervall in Sekunden (optional, Hub-Standard)",
           "platform": "Entitätstyp",
           "table": "Bereich",
           "data_type": "Datentyp",
@@ -181,6 +186,7 @@
           "device_class": "Geräteklasse",
           "state_class": "Zustandsklasse",
           "feedback_table": "Rückmeldung",
+          "write_confirmation": "Schreibvorgang sofort per Rückmeldung prüfen",
           "write_mode": "Schreibmodus",
           "command_on": "Einschaltwert",
           "command_off": "Ausschaltwert",

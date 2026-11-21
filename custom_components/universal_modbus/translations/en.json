@@ -65,6 +65,8 @@
         "description": "Create a Modbus-backed Home Assistant entity.",
         "data": {
           "name": "Name",
+          "unit_id": "Unit ID (optional, hub default)",
+          "scan_interval": "Scan interval in seconds (optional, hub default)",
           "platform": "Entity type",
           "table": "Register area",
           "data_type": "Data type",
@@ -112,6 +114,7 @@
           "device_class": "Device class",
           "state_class": "State class",
           "feedback_table": "Feedback source",
+          "write_confirmation": "Confirm write with immediate feedback",
           "write_mode": "Write mode",
           "command_on": "On command",
           "command_off": "Off command",
@@ -134,6 +137,8 @@
         "title": "Edit entity",
         "data": {
           "name": "Name",
+          "unit_id": "Unit ID (optional, hub default)",
+          "scan_interval": "Scan interval in seconds (optional, hub default)",
           "platform": "Entity type",
           "table": "Register area",
           "data_type": "Data type",
@@ -181,6 +186,7 @@
           "device_class": "Device class",
           "state_class": "State class",
           "feedback_table": "Feedback source",
+          "write_confirmation": "Confirm write with immediate feedback",
           "write_mode": "Write mode",
           "command_on": "On command",
           "command_off": "Off command",

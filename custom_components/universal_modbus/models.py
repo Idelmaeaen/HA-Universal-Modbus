@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-from .const import PROFILE_SCHEMA_VERSION
+from .const import MAX_UNIT_ID, PROFILE_SCHEMA_VERSION
 from .formula import (
     DEFAULT_READ_FORMULA,
     DEFAULT_WRITE_FORMULA,
@@ -60,6 +60,9 @@ class ModbusEntityDefinition:
     maximum: float = 100.0
     step: float = 1.0
     options: dict[str, int | str] | list[str] = field(default_factory=dict)
+    unit_id: int | None = None
+    scan_interval: int | None = None
+    write_confirmation: bool = True
 
     @classmethod
     def from_dict(cls, value: dict[str, Any]) -> "ModbusEntityDefinition":
@@ -87,6 +90,16 @@ class ModbusEntityDefinition:
             raise ValueError(f"Unsupported write mode: {entity.write_mode}")
         if entity.register < 0:
             raise ValueError("Register is invalid")
+        if entity.unit_id is not None and (
+            type(entity.unit_id) is not int or not 0 <= entity.unit_id <= MAX_UNIT_ID
+        ):
+            raise ValueError(f"Unit ID must be an integer from 0 to {MAX_UNIT_ID}")
+        if entity.scan_interval is not None and (
+            type(entity.scan_interval) is not int or entity.scan_interval < 1
+        ):
+            raise ValueError("Scan interval must be a positive integer")
+        if not isinstance(entity.write_confirmation, bool):
+            raise ValueError("Write confirmation must be a boolean")
         if entity.advanced_calculation:
             validate_formula(entity.read_formula, "register_value")
             if entity.writable:

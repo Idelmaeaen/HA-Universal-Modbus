@@ -30,6 +30,6 @@ class UniversalModbusEntity(CoordinatorEntity):
     def available(self) -> bool:
         """Return whether this entity's own Modbus read succeeded."""
         return (
-            super().available
+            self.definition.key in (self.coordinator.data or {})
             and self.definition.key not in self.coordinator.entity_errors
         )

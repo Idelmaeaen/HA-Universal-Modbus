@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import sys
 from threading import Lock
 from types import MethodType, SimpleNamespace
 
 import pytest
+from homeassistant.helpers.update_coordinator import UpdateFailed
 
 pymodbus = sys.modules.setdefault("pymodbus", SimpleNamespace())
 pymodbus_client = sys.modules.setdefault("pymodbus.client", SimpleNamespace())
@@ -20,7 +22,7 @@ from custom_components.universal_modbus.coordinator import (  # noqa: E402
 from custom_components.universal_modbus.models import ModbusEntityDefinition  # noqa: E402
 
 
-def _coil(key: str, name: str, register: int) -> ModbusEntityDefinition:
+def _coil(key: str, name: str, register: int, **overrides) -> ModbusEntityDefinition:
     return ModbusEntityDefinition.from_dict(
         {
             "key": key,
@@ -29,6 +31,7 @@ def _coil(key: str, name: str, register: int) -> ModbusEntityDefinition:
             "table": "coil",
             "register": register,
             "data_type": "bool",
+            **overrides,
         }
     )
 
@@ -41,9 +44,8 @@ def test_invalid_address_does_not_block_valid_entity() -> None:
 
     coordinator = UniversalModbusCoordinator.__new__(UniversalModbusCoordinator)
     coordinator.entities = [valid, invalid]
-    coordinator._read_batches = (
-        _ReadBatch("coil", 5051, 2, (valid_item, invalid_item)),
-    )
+    coordinator._slave = 10
+    batches = [_ReadBatch("coil", 5051, 2, (valid_item, invalid_item), 10)]
     coordinator._client_lock = Lock()
     coordinator._client = SimpleNamespace(close=lambda: None)
     coordinator.data = {}
@@ -55,13 +57,14 @@ def test_invalid_address_does_not_block_valid_entity() -> None:
     coordinator._ensure_connected = MethodType(lambda self: None, coordinator)
 
     def read_batch(self, batch):
+        assert batch.unit_id == 10
         if batch.count > 1 or batch.register == 5052:
             raise RuntimeError("IllegalAddress")
         return [1]
 
     coordinator._read_batch = MethodType(read_batch, coordinator)
 
-    values = coordinator._read_all()
+    values = coordinator._read_all(batches)
 
     assert values == {"valid": True}
     assert coordinator.entity_errors == {"invalid": "IllegalAddress"}
@@ -98,6 +101,10 @@ class _WriteClient:
     def write_registers(self, *args, **kwargs):
         return self._record("write_registers", *args, **kwargs)
 
+    def read_coils(self, address, *, count, device_id):
+        self._record("read_coils", address, count, device_id)
+        return SimpleNamespace(isError=lambda: False, bits=[False] * count)
+
 
 def _write_coordinator() -> UniversalModbusCoordinator:
     coordinator = UniversalModbusCoordinator.__new__(UniversalModbusCoordinator)
@@ -106,6 +113,30 @@ def _write_coordinator() -> UniversalModbusCoordinator:
     coordinator._slave = 10
     coordinator._device_id_parameter = "device_id"
     coordinator._ensure_connected = MethodType(lambda self: None, coordinator)
+    return coordinator
+
+
+def _polling_coordinator(entities):
+    coordinator = _write_coordinator()
+    coordinator._operation_lock = asyncio.Lock()
+    coordinator.entities = entities
+    coordinator.data = {}
+    coordinator.entity_errors = {}
+    coordinator.communication_error_count = 0
+    coordinator.last_update_success = True
+    coordinator._scan_interval = 5
+    coordinator._read_batches = coordinator._build_read_batches()
+    coordinator._next_poll = dict.fromkeys(coordinator._read_batches, 0)
+    coordinator._force_refresh = False
+    coordinator.updates = []
+    coordinator.async_update_listeners = lambda: coordinator.updates.append(coordinator.data)
+
+    async def run_job(job, *args):
+        return job(*args)
+
+    coordinator.hass = SimpleNamespace(
+        loop=SimpleNamespace(time=lambda: 100.95), async_add_executor_job=run_job
+    )
     return coordinator
 
 
@@ -143,3 +174,89 @@ def test_write_mode_selects_modbus_function(
     assert coordinator._client.calls == [
         (method, (19, payload), {"device_id": 10})
     ]
+
+
+def test_polling_batches_use_unit_ids_and_independent_intervals() -> None:
+    coordinator = _polling_coordinator(
+        [
+            _coil("first", "First", 10),
+            _coil("second", "Second", 11, unit_id=10, scan_interval=5),
+            _coil("other_unit", "Other unit", 10, unit_id=0),
+            _coil("fast", "Fast", 11, unit_id=255, scan_interval=2),
+        ]
+    )
+
+    async def poll():
+        coordinator.data = await coordinator._async_update_data()
+        assert coordinator._client.calls == [
+            ("read_coils", (10, 2, 10), {}),
+            ("read_coils", (10, 1, 0), {}),
+            ("read_coils", (11, 1, 255), {}),
+        ]
+        coordinator._client.calls.clear()
+        coordinator.hass.loop.time = lambda: 102.05
+        coordinator.entity_errors["other_unit"] = "Previous read failed"
+        coordinator.data = await coordinator._async_update_data()
+        assert coordinator._client.calls == [("read_coils", (11, 1, 255), {})]
+        assert len(coordinator.data) == 4
+        assert coordinator.entity_errors == {"other_unit": "Previous read failed"}
+        assert coordinator.update_interval.total_seconds() == 2
+
+    asyncio.run(poll())
+
+
+@pytest.mark.parametrize("confirmation", [True, False])
+def test_write_publishes_feedback_or_ack_without_polling_other_entities(confirmation) -> None:
+    command = _coil(
+        "command", "Command", 19, platform="switch", writable=True, unit_id=255,
+        feedback_table="coil", feedback_register=0, write_confirmation=confirmation,
+    )
+    coordinator = _polling_coordinator([command, _coil("other", "Other", 88)])
+    coordinator.data = {"other": True}
+
+    asyncio.run(coordinator.async_write_value(command, True))
+
+    expected_calls = [("write_coil", (19, True), {"device_id": 255})]
+    if confirmation:
+        expected_calls.append(("read_coils", (0, 1, 255), {}))
+    assert coordinator._client.calls == expected_calls
+    assert coordinator.updates == [{"other": True, "command": not confirmation}]
+    assert coordinator._next_poll == {5: 0}
+
+
+def test_failed_feedback_preserves_last_value_and_reports_acknowledgement() -> None:
+    command = _coil(
+        "command", "Command", 19, platform="switch", writable=True,
+        feedback_table="coil", feedback_register=0,
+    )
+    coordinator = _polling_coordinator([command])
+    coordinator.data = {"command": False}
+
+    def read_coils(*args, **kwargs):
+        raise RuntimeError("Read timeout")
+
+    coordinator._client.read_coils = read_coils
+    with pytest.raises(UpdateFailed, match="write acknowledged.*feedback failed"):
+        asyncio.run(coordinator.async_write_value(command, True))
+    assert coordinator._client.calls == [
+        ("write_coil", (19, True), {"device_id": 10}),
+    ]
+    assert coordinator.data == {"command": False}
+    assert coordinator.entity_errors == {"command": "Read timeout"}
+
+
+def test_pulse_reads_feedback_only_after_off_command() -> None:
+    command = _coil(
+        "command", "Command", 19, platform="toggle_switch", writable=True,
+        pulse_ms=1, feedback_table="coil", feedback_register=0,
+    )
+    coordinator = _polling_coordinator([command])
+
+    asyncio.run(coordinator.async_pulse(command))
+
+    assert coordinator._client.calls == [
+        ("write_coil", (19, True), {"device_id": 10}),
+        ("write_coil", (19, False), {"device_id": 10}),
+        ("read_coils", (0, 1, 10), {}),
+    ]
+    assert coordinator.updates == [{"command": False}]

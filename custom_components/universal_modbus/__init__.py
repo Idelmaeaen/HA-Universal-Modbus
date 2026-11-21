@@ -7,9 +7,16 @@ from pathlib import Path
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DOMAIN, PLATFORMS, PROFILE_DIRECTORY, SERVICE_EXPORT_PROFILE
+from .const import (
+    CONF_ENTITIES,
+    DOMAIN,
+    PLATFORMS,
+    PROFILE_DIRECTORY,
+    SERVICE_EXPORT_PROFILE,
+)
 from .coordinator import UniversalModbusCoordinator
 from .frontend import async_setup_frontend
 
@@ -62,3 +69,17 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def _async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await hass.config_entries.async_reload(entry.entry_id)
+    # A disabled or unavailable entity may not have been added by the reload.
+    registry = er.async_get(hass)
+    for definition in entry.options.get(CONF_ENTITIES, []):
+        platform = definition["platform"]
+        if platform == "toggle_switch":
+            platform = "switch"
+        entity_id = registry.async_get_entity_id(
+            platform, DOMAIN, f"{entry.entry_id}_{definition['key']}"
+        )
+        registered = registry.async_get(entity_id) if entity_id is not None else None
+        if registered is not None and registered.original_name != definition["name"]:
+            registry.async_update_entity(
+                registered.entity_id, original_name=definition["name"]
+            )

@@ -8,6 +8,7 @@ const TABLE_LABELS = {
 };
 const DATA_TYPES = ["bool", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32"];
 const SELECTED_HUB_STORAGE_KEY = "universal_modbus.selected_hub";
+const MAX_UNIT_ID = 255;
 const DEFAULT_READ_FORMULA = "register_value * scale + offset";
 const DEFAULT_WRITE_FORMULA = "(value - offset) / scale";
 const DEVICE_CLASS_UNITS = {
@@ -95,10 +96,11 @@ class UniversalModbusPanel extends HTMLElement {
     if (this._refreshing || this._refreshBlocked()) return;
     this._refreshing = true;
     try {
-      const previousEntryId = this._entryId;
-      const previousRenderSignature = this._renderSignature(this._data);
+      const previousData = this._data;
       const data = await this._hass.connection.sendMessagePromise({ type: "universal_modbus/editor/get" });
-      if (this._refreshBlocked()) return;
+      if (this._refreshBlocked() || this._data !== previousData) return;
+      const previousEntryId = this._entryId;
+      const previousRenderSignature = this._renderSignature(previousData);
       this._data = data;
       if (!data.entries.some((item) => item.entry_id === this._entryId)) this._setEntryId(data.entries[0]?.entry_id);
       if (
@@ -164,15 +166,17 @@ class UniversalModbusPanel extends HTMLElement {
       :host{display:block;color:var(--primary-text-color);background:var(--primary-background-color);min-height:100vh;font-family:var(--paper-font-body1_-_font-family,Roboto,sans-serif);overflow-anchor:none}
       .page{max-width:1100px;margin:0 auto;padding:24px}.center{padding:64px;text-align:center}
       .header{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:20px}.brand{display:flex;align-items:center;gap:12px}.brand img{width:44px;height:44px;object-fit:contain}.input-unit{position:relative}.input-unit input{padding-right:34px}.input-unit span{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--secondary-text-color);pointer-events:none}.brand-text{display:flex;flex-direction:column;gap:3px}.brand h1{font-size:24px;margin:0}.version{font-size:12px;color:var(--secondary-text-color)}.header-actions,.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.hub-picker{display:flex;align-items:center;gap:8px}.hub-picker label{font-size:13px;color:var(--secondary-text-color)}.hub{min-width:240px}.hub-card{padding:16px;margin-bottom:16px}.hub-card span{color:var(--secondary-text-color)}.hub-main{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:start}.hub-summary{display:flex;flex-direction:column;gap:8px;min-width:0}.hub-title{font-size:1.2rem;line-height:1.3}.hub-connection{color:var(--secondary-text-color)}.hub-meta{display:grid;grid-template-columns:max-content 1fr;column-gap:10px;row-gap:2px;color:var(--secondary-text-color)}.hub-meta b{font-weight:500;color:var(--primary-text-color)}.hub-health{display:flex;flex-direction:column;align-items:flex-end;gap:9px}.hub-diagnostics{display:flex;align-items:flex-start;justify-content:flex-end;gap:18px}.diagnostic{display:flex;flex-direction:column;align-items:flex-end;gap:2px;white-space:nowrap}.diagnostic-label{font-size:11px}.diagnostic-value{font-size:13px;color:var(--primary-text-color)!important}.status{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 10px;font-size:12px;line-height:1;background:var(--secondary-background-color);white-space:nowrap}.status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--error-color)}.status.connected::before{background:var(--success-color, #43a047)}.toolbar{margin-bottom:16px}
-      .hub-error{display:flex;align-items:flex-start;gap:7px;color:var(--error-color);font-size:13px;line-height:1.4;overflow-wrap:anywhere}.hub-error ha-icon{flex:0 0 auto;width:18px;height:18px}
+      .hub-error{display:flex;align-items:flex-start;gap:7px;color:var(--error-color);font-size:13px;line-height:1.4;max-height:5.6em;overflow:auto;overflow-wrap:anywhere}.hub-error ha-icon{flex:0 0 auto;width:18px;height:18px}
       select,input,textarea{box-sizing:border-box;width:100%;padding:10px 12px;border:1px solid var(--divider-color);border-radius:6px;background:var(--card-background-color);color:var(--primary-text-color);font:inherit}
       .card{background:var(--card-background-color);border-radius:12px;box-shadow:var(--ha-card-box-shadow);overflow:hidden}
       .entity-table{overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:var(--secondary-text-color) var(--divider-color)}
       .entity-table::-webkit-scrollbar{height:8px}.entity-table::-webkit-scrollbar-track{background:var(--divider-color)}.entity-table::-webkit-scrollbar-thumb{background:var(--secondary-text-color);border-radius:4px}
       .entity-table table{width:max-content;min-width:100%}
+      .entity-name{max-width:min(22rem,45vw);overflow-wrap:anywhere}.entity-detail{display:block;color:var(--secondary-text-color);font-size:12px}
+      .hub-error[hidden]{display:none}
       table{width:100%;border-collapse:collapse}th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--divider-color)}th{font-weight:500;color:var(--secondary-text-color)}th.sortable{padding:0}button.sort{display:flex;align-items:center;gap:5px;width:100%;padding:12px 16px;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}button.sort:hover{color:var(--primary-text-color);background:var(--secondary-background-color)}button.sort ha-icon{width:16px;height:16px}td.actions{width:128px;white-space:nowrap}.entity-icon{width:38px;text-align:center}.entity-icon ha-icon{color:var(--secondary-text-color)}.empty{text-align:center;color:var(--secondary-text-color);padding:28px}
       .icon{display:inline-flex;border:0;background:transparent;color:var(--primary-color);cursor:pointer;padding:7px;border-radius:50%;text-decoration:none}.icon:hover{background:var(--secondary-background-color)}.icon.danger{color:var(--error-color)}.entity-link{border:0;padding:0;background:transparent;color:var(--primary-color);font:inherit;text-align:left;cursor:pointer}.entity-link:hover{text-decoration:underline}ha-icon{pointer-events:none}.value-control{display:flex;align-items:center;gap:8px;min-width:120px}.value-control input[type="checkbox"]{width:auto}.value-control input[type="number"],.value-control select{min-width:90px;padding:7px}.value-control button{flex:0 0 auto}.value-unit{color:var(--secondary-text-color);white-space:nowrap}
-      .add-row td{height:42px}.add-row td:last-child{text-align:right}.modal-backdrop{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}.dialog{width:min(760px,100%);max-height:90vh;overflow:auto;background:var(--card-background-color);border-radius:12px;box-shadow:0 8px 32px #0008}.dialog h2{margin:0;padding:20px 24px;border-bottom:1px solid var(--divider-color)}form{padding:20px 24px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.field.full{grid-column:1/-1}.group{grid-column:1/-1;border:1px solid var(--divider-color);border-radius:8px;padding:16px}.group-title{font-size:15px;font-weight:600;margin:0 0 14px}.group-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.field label{display:block;font-size:13px;color:var(--secondary-text-color);margin-bottom:6px}.field.checkbox label{display:inline-flex;align-items:center;gap:8px;margin-bottom:0}.field.checkbox input{width:auto;margin:0}.readonly input{color:var(--secondary-text-color)}ha-icon-picker{display:block}.buttons{display:flex;justify-content:flex-end;gap:10px;margin-top:24px}.button{width:auto;border:0;border-radius:6px;padding:10px 18px;cursor:pointer;font-weight:500}.button.primary{background:var(--primary-color);color:var(--text-primary-color)}.button.secondary{background:var(--secondary-background-color);color:var(--primary-text-color)}.error{padding:14px;background:var(--error-color);color:white;border-radius:6px;margin-bottom:16px}
+      .modal-backdrop{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}.dialog{width:min(760px,100%);max-height:90vh;overflow:auto;background:var(--card-background-color);border-radius:12px;box-shadow:0 8px 32px #0008}.dialog h2{margin:0;padding:20px 24px;border-bottom:1px solid var(--divider-color)}form{padding:20px 24px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.field.full{grid-column:1/-1}.group{grid-column:1/-1;border:1px solid var(--divider-color);border-radius:8px;padding:16px}.group-title{font-size:15px;font-weight:600;margin:0 0 14px}.group-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.field label{display:block;font-size:13px;color:var(--secondary-text-color);margin-bottom:6px}.field.checkbox label{display:inline-flex;align-items:center;gap:8px;margin-bottom:0}.field.checkbox input{width:auto;margin:0}.readonly input{color:var(--secondary-text-color)}ha-icon-picker{display:block}.buttons{display:flex;justify-content:flex-end;gap:10px;margin-top:24px}.button{width:auto;border:0;border-radius:6px;padding:10px 18px;cursor:pointer;font-weight:500}.button.primary{background:var(--primary-color);color:var(--text-primary-color)}.button.secondary{background:var(--secondary-background-color);color:var(--primary-text-color)}.error{padding:14px;background:var(--error-color);color:white;border-radius:6px;margin-bottom:16px}
       .formula-help{color:var(--secondary-text-color);font-size:12px;line-height:1.5}.formula-help code{color:var(--primary-text-color);background:var(--secondary-background-color);border-radius:4px;padding:2px 5px}.formula-field textarea{font-family:monospace;resize:vertical}
       @media(max-width:700px){.page{padding:12px}.header{align-items:stretch;flex-direction:column}.header-actions{align-items:stretch}.hub-picker{align-items:stretch;flex-direction:column}.hub-main{grid-template-columns:1fr}.hub-health{align-items:flex-start}.hub-diagnostics{justify-content:flex-start;gap:14px;max-width:100%;overflow-x:auto}.diagnostic{align-items:flex-start}.grid,.group-grid{grid-template-columns:1fr}th:nth-child(4),td:nth-child(4){display:none}th,td{padding:10px}.dialog{max-height:96vh}}
     </style>`;
@@ -245,6 +249,7 @@ class UniversalModbusPanel extends HTMLElement {
       entries: (data?.entries || []).map(({
         values: _values,
         connected: _connected,
+        error: _error,
         last_update_success: _lastUpdateSuccess,
         entity_errors: _entityErrors,
         last_response_time_ms: _lastResponseTime,
@@ -284,6 +289,11 @@ class UniversalModbusPanel extends HTMLElement {
       status.classList.toggle("connected", connected);
       status.textContent = connected ? this._t("Connected", "Verbunden") : this._t("Disconnected", "Nicht verbunden");
     }
+    const hubError = this.shadowRoot.querySelector(".hub-error");
+    if (hubError) {
+      hubError.hidden = !entry.error;
+      hubError.querySelector(".hub-error-message").textContent = entry.error || "";
+    }
     const diagnosticValues = this.shadowRoot.querySelectorAll(".diagnostic-value");
     this._diagnostics(entry).forEach(([_label, value], index) => {
       if (diagnosticValues[index]) diagnosticValues[index].textContent = value;
@@ -304,15 +314,16 @@ class UniversalModbusPanel extends HTMLElement {
     });
     if (this._sortColumn === "value") {
       const tbody = this.shadowRoot.querySelector(".entity-table tbody");
-      const addRow = tbody?.querySelector(".add-row");
-      if (tbody && addRow) {
+      if (tbody) {
         const rows = new Map(
           Array.from(tbody.querySelectorAll("tr[data-entity-index]"))
             .map((row) => [Number(row.dataset.entityIndex), row])
         );
+        let nextRow = tbody.firstElementChild;
         this._sortedEntities(entities).forEach(({ index }) => {
           const row = rows.get(index);
-          if (row) tbody.insertBefore(row, addRow);
+          if (row && row === nextRow) nextRow = nextRow.nextElementSibling;
+          else if (row) tbody.insertBefore(row, nextRow);
         });
       }
     }
@@ -351,7 +362,9 @@ class UniversalModbusPanel extends HTMLElement {
   _render() {
     const scrollPositions = this._captureScrollPositions();
     const currentEntityTable = this.shadowRoot.querySelector(".entity-table");
-    if (currentEntityTable) this._tableScrollLeft = currentEntityTable.scrollLeft;
+    if (currentEntityTable?.dataset.entryId === this._entryId) {
+      this._tableScrollLeft = currentEntityTable.scrollLeft;
+    }
     const entries = this._data?.entries || [];
     if (!entries.length) {
       this.shadowRoot.innerHTML = `<div class="page">${this._header(`<div class="header-actions"><button class="icon import-hub" title="${this._t("Import hub", "Hub importieren")}"><ha-icon icon="mdi:upload"></ha-icon></button><button class="icon add-hub" title="${this._t("Add hub", "Hub hinzuf\u00FCgen")}"><ha-icon icon="mdi:plus"></ha-icon></button><input type="file" class="hub-file" accept="application/json,.json" hidden></div>`)}<div class="card empty">${this._t("No Universal Modbus hub configured.", "Kein Universal-Modbus-Hub konfiguriert.")}</div></div>${this._styles()}`;
@@ -364,7 +377,7 @@ class UniversalModbusPanel extends HTMLElement {
     const entry = this._entry;
     const entities = entry.profile.entities || [];
     const hubSelector = `<div class="hub-picker"><label for="hub">${this._t("Hub", "Hub")}</label><select class="hub" id="hub">${entries.map((item) => `<option value="${item.entry_id}" ${item.entry_id === this._entryId ? "selected" : ""}>${this._escape(item.title)}</option>`).join("")}</select></div>`;
-    const rows = this._sortedEntities(entities).map(({ entity, index }) => `<tr data-entity-index="${index}"><td class="entity-icon">${entity.icon ? `<ha-icon icon="${this._escape(entity.icon)}"></ha-icon>` : ""}</td><td>${entry.entity_ids?.[entity.key] ? `<button class="entity-link" data-entity-id="${this._escape(entry.entity_ids[entity.key])}">${this._escape(entity.name)}</button>` : this._escape(entity.name)}</td><td>${this._escape(entity.platform === "toggle_switch" ? "ToggleSwitch" : entity.platform)}</td><td>${this._escape(TABLE_LABELS[entity.table] || entity.table)}</td><td>${this._escape(entity.register)}</td><td class="entity-value" data-index="${index}">${this._valueControl(entity)}</td><td class="actions"><button class="icon edit" data-index="${index}" title="${this._t("Edit", "Bearbeiten")}"><ha-icon icon="mdi:pencil"></ha-icon></button><button class="icon duplicate" data-index="${index}" title="${this._t("Duplicate", "Duplizieren")}"><ha-icon icon="mdi:content-copy"></ha-icon></button><button class="icon danger delete" data-index="${index}" title="${this._t("Delete", "L\u00F6schen")}"><ha-icon icon="mdi:delete"></ha-icon></button></td></tr>`).join("");
+    const rows = this._sortedEntities(entities).map(({ entity, index }) => `<tr data-entity-index="${index}"><td class="entity-icon">${entity.icon ? `<ha-icon icon="${this._escape(entity.icon)}"></ha-icon>` : ""}</td><td class="entity-name">${entry.entity_ids?.[entity.key] ? `<button class="entity-link" data-entity-id="${this._escape(entry.entity_ids[entity.key])}" title="${this._escape(entry.entity_ids[entity.key])}">${this._escape(entity.name)}</button>` : this._escape(entity.name)}</td><td>${this._escape(entity.platform === "toggle_switch" ? "ToggleSwitch" : entity.platform)}</td><td>${this._escape(TABLE_LABELS[entity.table] || entity.table)}</td><td>${this._escape(entity.register)}${entity.unit_id == null ? "" : `<small class="entity-detail">Unit ${this._escape(entity.unit_id)}</small>`}</td><td class="entity-value" data-index="${index}">${this._valueControl(entity)}</td><td class="actions"><button class="icon edit" data-index="${index}" title="${this._t("Edit", "Bearbeiten")}"><ha-icon icon="mdi:pencil"></ha-icon></button><button class="icon duplicate" data-index="${index}" title="${this._t("Duplicate", "Duplizieren")}"><ha-icon icon="mdi:content-copy"></ha-icon></button><button class="icon danger delete" data-index="${index}" title="${this._t("Delete", "L\u00F6schen")}"><ha-icon icon="mdi:delete"></ha-icon></button></td></tr>`).join("");
     const h = entry.hub;
     const connected = entry.connected && entry.last_update_success;
     const metadata = [
@@ -372,13 +385,13 @@ class UniversalModbusPanel extends HTMLElement {
       [this._t("Model", "Modell"), entry.profile.model],
       [this._t("Description", "Beschreibung"), entry.profile.description],
     ].filter((item) => item[1]);
-    const hubError = entry.error ? `<div class="hub-error"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span><b>${this._t("Current error", "Aktueller Fehler")}:</b> ${this._escape(entry.error)}</span></div>` : "";
+    const hubError = `<div class="hub-error" ${entry.error ? "" : "hidden"}><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span><b>${this._t("Current error", "Aktueller Fehler")}:</b> <span class="hub-error-message">${this._escape(entry.error)}</span></span></div>`;
     const hubMetadata = (metadata.length ? `<div class="hub-meta">${metadata.map((item) => `<b>${this._escape(item[0])}</b><span>${this._escape(item[1])}</span>`).join("")}</div>` : "") + hubError;
     const diagnostics = this._diagnostics(entry);
     const hubDiagnostics = `<div class="hub-diagnostics">${diagnostics.map(([label, value]) => `<div class="diagnostic"><span class="diagnostic-label">${this._escape(label)}</span><span class="diagnostic-value">${this._escape(value)}</span></div>`).join("")}</div>`;
     const deviceLink = entry.device_id ? `<a class="icon device-hub" href="/config/devices/device/${encodeURIComponent(entry.device_id)}" title="${this._t("Open device", "Ger\u00E4t \u00F6ffnen")}" aria-label="${this._t("Open device", "Ger\u00E4t \u00F6ffnen")}"><ha-icon icon="mdi:open-in-new"></ha-icon></a>` : "";
     const actions = `<div class="header-actions">${hubSelector}${deviceLink}<button class="icon import-hub" title="${this._t("Import hub", "Hub importieren")}"><ha-icon icon="mdi:upload"></ha-icon></button><button class="icon export-hub" title="${this._t("Export hub", "Hub exportieren")}"><ha-icon icon="mdi:download"></ha-icon></button><button class="icon regenerate-keys" title="${this._t("Regenerate entity keys", "Entit\u00E4ts-Keys neu generieren")}"><ha-icon icon="mdi:key-change"></ha-icon></button><button class="icon cleanup-entities" title="${this._t("Remove orphaned entities", "Entit\u00E4ts-Leichen entfernen")}"><ha-icon icon="mdi:broom"></ha-icon></button><button class="icon add-hub" title="${this._t("Add hub", "Hub hinzuf\u00FCgen")}"><ha-icon icon="mdi:plus"></ha-icon></button><button class="icon edit-hub" title="${this._t("Edit hub", "Hub bearbeiten")}"><ha-icon icon="mdi:pencil"></ha-icon></button><button class="icon danger delete-hub" title="${this._t("Delete hub", "Hub l\u00F6schen")}"><ha-icon icon="mdi:delete"></ha-icon></button><input type="file" class="hub-file" accept="application/json,.json" hidden></div>`;
-    this.shadowRoot.innerHTML = `<div class="page">${this._header(actions)}<div class="hub-card card"><div class="hub-main"><div class="hub-summary"><strong class="hub-title">${this._escape(entry.title)}</strong>${hubMetadata}<span class="hub-connection">${this._escape(h.host)}:${h.port} \u00B7 Unit ${h.slave} \u00B7 ${h.scan_interval}s</span></div><div class="hub-health"><span class="status ${connected ? "connected" : ""}">${connected ? this._t("Connected", "Verbunden") : this._t("Disconnected", "Nicht verbunden")}</span>${hubDiagnostics}</div></div></div><div class="toolbar"><button class="button secondary refresh">${this._t("Refresh values", "Werte aktualisieren")}</button></div><div class="card entity-table" role="region" aria-label="${this._t("Entities", "Entit\u00E4ten")}" tabindex="0"><table><thead><tr><th></th>${this._sortHeader("name", this._t("Name", "Name"))}${this._sortHeader("platform", this._t("Type", "Typ"))}${this._sortHeader("table", this._t("Area", "Bereich"))}${this._sortHeader("register", this._t("Register", "Register"))}${this._sortHeader("value", this._t("Current value", "Aktueller Wert"))}<th></th></tr></thead><tbody>${rows}<tr class="add-row"><td colspan="6"></td><td><button class="icon add" title="${this._t("Add entity", "Entit\u00E4t hinzuf\u00FCgen")}"><ha-icon icon="mdi:plus"></ha-icon></button></td></tr></tbody></table></div></div>${this._styles()}`;
+    this.shadowRoot.innerHTML = `<div class="page">${this._header(actions)}<div class="hub-card card"><div class="hub-main"><div class="hub-summary"><strong class="hub-title">${this._escape(entry.title)}</strong>${hubMetadata}<span class="hub-connection">${this._escape(h.host)}:${h.port} \u00B7 Unit ${h.slave} \u00B7 ${h.scan_interval}s</span></div><div class="hub-health"><span class="status ${connected ? "connected" : ""}">${connected ? this._t("Connected", "Verbunden") : this._t("Disconnected", "Nicht verbunden")}</span>${hubDiagnostics}</div></div></div><div class="toolbar"><button class="button primary add">${this._t("Add entity", "Entit\u00E4t hinzuf\u00FCgen")}</button><button class="button secondary refresh">${this._t("Refresh values", "Werte aktualisieren")}</button></div><div class="card entity-table" data-entry-id="${this._escape(this._entryId)}" role="region" aria-label="${this._t("Entities", "Entit\u00E4ten")}" tabindex="0"><table><thead><tr><th></th>${this._sortHeader("name", this._t("Name", "Name"))}${this._sortHeader("platform", this._t("Type", "Typ"))}${this._sortHeader("table", this._t("Area", "Bereich"))}${this._sortHeader("register", this._t("Register", "Register"))}${this._sortHeader("value", this._t("Current value", "Aktueller Wert"))}<th></th></tr></thead><tbody>${rows}</tbody></table></div></div>${this._styles()}`;
     const entityTable = this.shadowRoot.querySelector(".entity-table");
     this._renderedValueTokens = new Map(entities.map((entity, index) => [index, this._valueToken(entity)]));
     entityTable.scrollLeft = this._tableScrollLeft;
@@ -453,14 +466,22 @@ class UniversalModbusPanel extends HTMLElement {
   }
 
   async _writeValue(key, value, control) {
+    const entryId = this._entryId;
     control.disabled = true;
     try {
-      await this._hass.connection.sendMessagePromise({ type: "universal_modbus/editor/write", entry_id: this._entryId, key, value });
-      await this._refresh();
+      const result = await this._hass.connection.sendMessagePromise({ type: "universal_modbus/editor/write", entry_id: entryId, key, value });
+      if (result && Object.hasOwn(result, "value")) {
+        this._updateEntry(entryId, (entry) => ({ values: { ...entry.values, [key]: result.value } }));
+      }
     } catch (err) {
       alert(err.message || String(err));
+    } finally {
       control.disabled = false;
-      await this._refresh();
+      if (entryId === this._entryId) {
+        const index = this._entry.profile.entities.findIndex((entity) => entity.key === key);
+        this._renderedValueTokens.delete(index);
+        this._updateLiveView();
+      }
     }
   }
   async _cleanupEntities() {
@@ -485,7 +506,7 @@ class UniversalModbusPanel extends HTMLElement {
     const field = (name, label, value, type = "text", extra = "") => `<div class="field"><label>${label}</label><input name="${name}" type="${type}" value="${this._escape(value)}" ${extra}></div>`;
     const secondsField = (name, label, value) => `<div class="field"><label>${label}</label><div class="input-unit"><input name="${name}" type="number" value="${this._escape(value)}" min="1" inputmode="numeric"><span>s</span></div></div>`;
     const order = (name, label, value) => `<div class="field"><label>${label}</label><select name="${name}"><option value="big" ${value === "big" ? "selected" : ""}>Big-Endian</option><option value="little" ${value === "little" ? "selected" : ""}>Little-Endian</option></select></div>`;
-    dialog.innerHTML = `<div class="dialog"><h2>${entry ? this._t("Edit hub", "Hub bearbeiten") : this._t("Add hub", "Hub hinzuf\u00FCgen")}</h2><form><div class="grid">${field("name", this._t("Hub name", "Hub-Name"), hub.name || entry?.title || "", "text", "required")}${field("manufacturer", this._t("Manufacturer", "Hersteller"), profile.manufacturer)}${field("model", this._t("Model", "Modell"), profile.model)}${field("description", this._t("Description", "Beschreibung"), profile.description)}<section class="group"><h3 class="group-title">${this._t("Communication", "Kommunikation")}</h3><div class="group-grid">${field("host", "Host", hub.host, "text", "required")}${field("port", "Port", hub.port, "number", 'min="1" max="65535"')}${field("slave", "Unit ID", hub.slave, "number", 'min="0" max="247"')}${secondsField("scan_interval", this._t("Scan interval", "Abfrageintervall"), hub.scan_interval)}${secondsField("timeout", this._t("Timeout", "Zeit\u00FCberschreitung"), hub.timeout)}${order("byte_order", this._t("Byte order", "Byte-Reihenfolge"), profile.defaults?.byte_order)}${order("word_order", this._t("Word order", "Wort-Reihenfolge"), profile.defaults?.word_order)}</div></section></div><div class="buttons"><button type="button" class="button secondary cancel">${this._t("Cancel", "Abbrechen")}</button><button class="button primary">${this._t("Save", "Speichern")}</button></div></form></div>`;
+    dialog.innerHTML = `<div class="dialog"><h2>${entry ? this._t("Edit hub", "Hub bearbeiten") : this._t("Add hub", "Hub hinzuf\u00FCgen")}</h2><form><div class="grid">${field("name", this._t("Hub name", "Hub-Name"), hub.name || entry?.title || "", "text", "required")}${field("manufacturer", this._t("Manufacturer", "Hersteller"), profile.manufacturer)}${field("model", this._t("Model", "Modell"), profile.model)}${field("description", this._t("Description", "Beschreibung"), profile.description)}<section class="group"><h3 class="group-title">${this._t("Communication", "Kommunikation")}</h3><div class="group-grid">${field("host", "Host", hub.host, "text", "required")}${field("port", "Port", hub.port, "number", 'min="1" max="65535"')}${field("slave", "Unit ID", hub.slave, "number", `min="0" max="${MAX_UNIT_ID}"`)}${secondsField("scan_interval", this._t("Scan interval", "Abfrageintervall"), hub.scan_interval)}${secondsField("timeout", this._t("Timeout", "Zeit\u00FCberschreitung"), hub.timeout)}${order("byte_order", this._t("Byte order", "Byte-Reihenfolge"), profile.defaults?.byte_order)}${order("word_order", this._t("Word order", "Wort-Reihenfolge"), profile.defaults?.word_order)}</div></section></div><div class="buttons"><button type="button" class="button secondary cancel">${this._t("Cancel", "Abbrechen")}</button><button class="button primary">${this._t("Save", "Speichern")}</button></div></form></div>`;
     this.shadowRoot.appendChild(dialog);
     dialog.querySelector(".cancel").addEventListener("click", () => dialog.remove());
     dialog.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const values = Object.fromEntries(new FormData(event.target)); ["port", "slave", "scan_interval", "timeout"].forEach((key) => values[key] = Number(values[key])); const nextProfile = structuredClone(profile); Object.assign(nextProfile, { name: values.name, manufacturer: values.manufacturer, model: values.model, description: values.description }); nextProfile.defaults = { ...(nextProfile.defaults || {}), byte_order: values.byte_order, word_order: values.word_order }; const nextHub = { name: values.name, host: values.host, port: values.port, slave: values.slave, scan_interval: values.scan_interval, timeout: values.timeout }; try { const result = await this._hass.connection.sendMessagePromise({ type: "universal_modbus/hub/save", entry_id: entryId || undefined, hub: nextHub, profile: nextProfile }); this._setEntryId(result.entry_id); dialog.remove(); await this._refresh(); } catch (err) { alert(err.message || String(err)); } });
@@ -533,7 +554,7 @@ class UniversalModbusPanel extends HTMLElement {
     const profile = data.profile;
     const dialog = document.createElement("div"); dialog.className = "modal-backdrop";
     const field = (name, label, value, type = "text", extra = "") => `<div class="field"><label>${label}</label><input name="${name}" type="${type}" value="${this._escape(value)}" ${extra}></div>`;
-    dialog.innerHTML = `<div class="dialog"><h2>${this._t("Import hub", "Hub importieren")}</h2><form><div class="grid">${field("host", this._t("IP address", "IP-Adresse"), hub.host, "text", "required")}${field("port", "Port", hub.port, "number", 'min="1" max="65535"')}${field("slave", "Unit ID", hub.slave, "number", 'min="0" max="247"')}</div><div class="buttons"><button type="button" class="button secondary cancel">${this._t("Cancel", "Abbrechen")}</button><button type="submit" class="button primary">${this._t("Import", "Importieren")}</button></div></form></div>`;
+    dialog.innerHTML = `<div class="dialog"><h2>${this._t("Import hub", "Hub importieren")}</h2><form><div class="grid">${field("host", this._t("IP address", "IP-Adresse"), hub.host, "text", "required")}${field("port", "Port", hub.port, "number", 'min="1" max="65535"')}${field("slave", "Unit ID", hub.slave, "number", `min="0" max="${MAX_UNIT_ID}"`)}</div><div class="buttons"><button type="button" class="button secondary cancel">${this._t("Cancel", "Abbrechen")}</button><button type="submit" class="button primary">${this._t("Import", "Importieren")}</button></div></form></div>`;
     this.shadowRoot.appendChild(dialog);
     dialog.querySelector(".cancel").addEventListener("click", () => dialog.remove());
     dialog.querySelector("form").addEventListener("submit", async (event) => {
@@ -665,7 +686,7 @@ class UniversalModbusPanel extends HTMLElement {
     const readOnly = readOnlyPlatform && d.writable === false;
     const readOnlyField = readOnlyPlatform ? this._checkbox("read_only", "Read Only", readOnly) : "";
     const writeModeField = readOnlyPlatform ? this._writeModeSelect() : "";
-    const modbusDetails = `${readOnlyField}${writeModeField}${feedback ? `${this._field("feedback_register", this._t("Feedback register", "R\u00FCckmelderegister"), "number", 'min="0"')}${switchLike ? `${this._field("command_on", this._t("On command", "Einschaltwert"), "number")}${this._field("command_off", this._t("Off command", "Ausschaltwert"), "number")}` : ""}` : ""}`;
+    const modbusDetails = `${readOnlyField}${writeModeField}${feedback ? `${this._field("feedback_register", this._t("Feedback register", "R\u00FCckmelderegister"), "number", 'min="0"')}${readOnlyPlatform ? this._checkbox("write_confirmation", this._t("Confirm write with immediate feedback", "Schreibvorgang sofort per R\u00FCckmeldung pr\u00FCfen"), d.write_confirmation ?? true) : ""}${switchLike ? `${this._field("command_on", this._t("On command", "Einschaltwert"), "number")}${this._field("command_off", this._t("Off command", "Ausschaltwert"), "number")}` : ""}` : ""}`;
     const properties = `${this._select("platform", this._t("Entity type", "Entit\u00E4tstyp"), PLATFORMS)}${deviceClasses.length ? this._select("device_class", this._t("Device class", "Ger\u00E4teklasse"), deviceClasses, true) : ""}${d.platform === "sensor" && !hasOptions ? this._select("state_class", this._t("State class", "Zustandsklasse"), this._data.state_classes, true) : ""}${unitField}${this._iconField()}${analog && ["sensor", "number"].includes(d.platform) ? this._precisionSelect() : ""}${analog ? `${this._field("offset", "Offset", "number", 'step="any"')}${this._field("scale", this._t("Scale", "Skalierung"), "number", 'step="any"')}` : ""}${pulseLike ? this._field("pulse_ms", this._t("Pulse duration (ms)", "Impulsdauer (ms)"), "number", 'min="0"') : ""}${d.platform === "number" ? `${this._field("minimum", "Minimum", "number", 'step="any"')}${this._field("maximum", "Maximum", "number", 'step="any"')}${this._field("step", this._t("Step", "Schrittweite"), "number", 'step="any" min="0.000001"')}` : ""}${["sensor", "binary_sensor", "select"].includes(d.platform) && !coilSensor ? `<div class="field full"><label for="options_json">${this._t("Options as JSON", "Optionen als JSON")}</label><textarea id="options_json" name="options_json" rows="5">${this._escape(JSON.stringify(d.options || {}, null, 2))}</textarea></div>` : ""}`;
     const formulaHelp = this._t(
       "Read formulas use register_value; write formulas use value. scale and offset are available in both. Supported: +, -, *, /, //, %, comparisons, if/else, abs, min, max, round, int, float, and bool. Examples: None if register_value == 65535 else register_value / 10; 100 if register_value > 0 else 0.",
@@ -678,7 +699,7 @@ class UniversalModbusPanel extends HTMLElement {
     const uniqueId = this._entryId || this._t("Generated when saved", "Wird beim Speichern erzeugt");
     const identity = `${this._field("name", this._t("Name", "Name"), "text", "required")}${this._readonlyField("key_preview", "key", d.key || this._t("Generated when saved", "Wird beim Speichern erzeugt"))}${this._readonlyField("unique_id", "unique_id", uniqueId)}<input name="key" type="hidden" value="${this._escape(d.key || "")}">`;
     const dialog = document.createElement("div"); dialog.className = "modal-backdrop";
-    dialog.innerHTML = `<div class="dialog"><h2>${this._editingIndex === null ? this._t("Add entity", "Entit\u00E4t hinzuf\u00FCgen") : this._t("Edit entity", "Entit\u00E4t bearbeiten")}</h2><form>${error ? `<div class="error">${this._escape(error)}</div>` : ""}<div class="grid">${identity}<section class="group"><h3 class="group-title">Modbus</h3><div class="group-grid">${this._select("table", this._t("Register area", "Bereich"), TABLES)}${this._field("register", this._t("Register", "Register"), "number", 'min="0" required')}${this._select("data_type", this._t("Data type", "Datentyp"), dataTypes)}${this._select("feedback_table", this._t("Feedback source", "R\u00FCckmeldung"), TABLES, true)}${modbusDetails}</div></section><section class="group"><h3 class="group-title">${this._t("Properties", "Eigenschaften")}</h3><div class="group-grid">${properties}</div></section></div><div class="buttons"><button type="button" class="button secondary cancel">${this._t("Cancel", "Abbrechen")}</button><button type="submit" class="button primary">${this._t("Save", "Speichern")}</button></div></form></div>`;
+    dialog.innerHTML = `<div class="dialog"><h2>${this._editingIndex === null ? this._t("Add entity", "Entit\u00E4t hinzuf\u00FCgen") : this._t("Edit entity", "Entit\u00E4t bearbeiten")}</h2><form>${error ? `<div class="error">${this._escape(error)}</div>` : ""}<div class="grid">${identity}<section class="group"><h3 class="group-title">Modbus</h3><div class="group-grid">${this._field("unit_id", "Unit ID", "number", `min="0" max="${MAX_UNIT_ID}" placeholder="${this._t("Hub default", "Hub-Standard")}"`)}${this._field("scan_interval", this._t("Scan interval (s)", "Abfrageintervall (s)"), "number", `min="1" placeholder="${this._t("Hub default", "Hub-Standard")}"`)}${this._select("table", this._t("Register area", "Bereich"), TABLES)}${this._field("register", this._t("Register", "Register"), "number", 'min="0" required')}${this._select("data_type", this._t("Data type", "Datentyp"), dataTypes)}${this._select("feedback_table", this._t("Feedback source", "R\u00FCckmeldung"), TABLES, true)}${modbusDetails}</div></section><section class="group"><h3 class="group-title">${this._t("Properties", "Eigenschaften")}</h3><div class="group-grid">${properties}</div></section></div><div class="buttons"><button type="button" class="button secondary cancel">${this._t("Cancel", "Abbrechen")}</button><button type="submit" class="button primary">${this._t("Save", "Speichern")}</button></div></form></div>`;
     dialog.querySelector(".grid").insertAdjacentHTML("beforeend", advancedSection);
     this.shadowRoot.querySelector(".modal-backdrop")?.remove(); this.shadowRoot.appendChild(dialog);
     dialog.querySelector(".cancel").addEventListener("click", () => this._cancelEditor());
@@ -695,6 +716,10 @@ class UniversalModbusPanel extends HTMLElement {
     data.count = ["int64", "uint64"].includes(data.data_type) ? 4 : (["int32", "uint32", "float32"].includes(data.data_type) ? 2 : 1);
     ["scale", "offset", "minimum", "maximum", "step"].forEach((key) => { if (key in data) data[key] = Number.parseFloat(data[key]); });
     data.key ||= null;
+    data.unit_id = data.unit_id === "" || data.unit_id == null ? null : Number(data.unit_id);
+    data.scan_interval = data.scan_interval === "" || data.scan_interval == null ? null : Number(data.scan_interval);
+    const confirmation = form.elements.namedItem("write_confirmation");
+    if (confirmation) data.write_confirmation = confirmation.checked;
     data.feedback_table ||= null; data.feedback_register = data.feedback_table ? data.feedback_register : null;
     const coilSensor = data.platform === "sensor" && data.table === "coil";
     if (coilSensor) data.options = {};
@@ -797,8 +822,18 @@ class UniversalModbusPanel extends HTMLElement {
     return `${base} ${suffix}`;
   }
   async _saveProfile(profile) {
-    const result = await this._hass.connection.sendMessagePromise({ type: "universal_modbus/editor/save", entry_id: this._entryId, profile });
-    this._entry.profile = result.profile;
+    const entryId = this._entryId;
+    const result = await this._hass.connection.sendMessagePromise({ type: "universal_modbus/editor/save", entry_id: entryId, profile });
+    this._updateEntry(entryId, () => ({ profile: result.profile }));
+  }
+
+  _updateEntry(entryId, changes) {
+    this._data = {
+      ...this._data,
+      entries: this._data.entries.map((entry) => entry.entry_id === entryId
+        ? { ...entry, ...changes(entry) }
+        : entry),
+    };
   }
 }
 

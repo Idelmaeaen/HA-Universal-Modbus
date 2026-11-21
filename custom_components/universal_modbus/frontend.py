@@ -20,6 +20,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.update_coordinator import UpdateFailed
 from homeassistant.util import dt as dt_util
 
 from .const import (
@@ -32,6 +33,7 @@ from .const import (
     DEFAULT_SLAVE,
     DEFAULT_TIMEOUT,
     DOMAIN,
+    MAX_UNIT_ID,
     PROFILE_SCHEMA_VERSION,
 )
 from .helpers import generate_unique_key
@@ -52,7 +54,7 @@ HUB_SCHEMA = vol.Schema(
             int, vol.Range(min=1, max=65535)
         ),
         vol.Required(CONF_SLAVE, default=DEFAULT_SLAVE): vol.All(
-            int, vol.Range(min=0, max=247)
+            int, vol.Range(min=0, max=MAX_UNIT_ID)
         ),
         vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(
             int, vol.Range(min=1)
@@ -306,7 +308,12 @@ async def websocket_write_value(hass, connection, msg) -> None:
     except (KeyError, TypeError, ValueError) as err:
         connection.send_error(msg["id"], "invalid_value", str(err))
         return
-    connection.send_result(msg["id"])
+    except UpdateFailed as err:
+        connection.send_error(msg["id"], "write_failed", str(err))
+        return
+    values = coordinator.data or {}
+    result = {"value": values[definition.key]} if definition.key in values else {}
+    connection.send_result(msg["id"], result)
 
 
 @websocket_api.websocket_command(

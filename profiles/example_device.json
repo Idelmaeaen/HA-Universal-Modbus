@@ -22,7 +22,10 @@
       "name": "Running",
       "platform": "binary_sensor",
       "table": "discrete_input",
-      "register": 0
+      "register": 0,
+      "data_type": "bool",
+      "unit_id": 2,
+      "scan_interval": 2
     }
   ]
 }

@@ -26,6 +26,7 @@ from .const import (
     DEFAULT_SLAVE,
     DEFAULT_TIMEOUT,
     DOMAIN,
+    MAX_UNIT_ID,
     PROFILE_SCHEMA_VERSION,
 )
 from .formula import DEFAULT_READ_FORMULA, DEFAULT_WRITE_FORMULA
@@ -97,7 +98,7 @@ class UniversalModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required(CONF_NAME): str,
                     vol.Required(CONF_HOST): str,
                     vol.Required(CONF_PORT, default=DEFAULT_PORT): vol.All(int, vol.Range(min=1, max=65535)),
-                    vol.Required(CONF_SLAVE, default=DEFAULT_SLAVE): vol.All(int, vol.Range(min=0, max=247)),
+                    vol.Required(CONF_SLAVE, default=DEFAULT_SLAVE): vol.All(int, vol.Range(min=0, max=MAX_UNIT_ID)),
                     vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(int, vol.Range(min=1)),
                     vol.Required(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): vol.All(int, vol.Range(min=1)),
                 }
@@ -227,6 +228,8 @@ class UniversalModbusOptionsFlow(config_entries.OptionsFlow):
             return self.async_abort(reason="entity_not_found")
         if user_input is not None:
             self._entity_draft = {**current, **user_input}
+            for field in ("unit_id", CONF_SCAN_INTERVAL):
+                self._entity_draft[field] = user_input.get(field)
             if user_input["platform"] != current["platform"]:
                 self._entity_draft.pop("device_class", None)
                 self._entity_draft.pop("state_class", None)
@@ -389,12 +392,23 @@ class UniversalModbusOptionsFlow(config_entries.OptionsFlow):
     @staticmethod
     def _entity_base_schema(current=None):
         value = current or {}
+        unit_id = value.get("unit_id")
+        scan_interval = value.get(CONF_SCAN_INTERVAL)
+        unit_id_field = vol.Optional(
+            "unit_id", description={"suggested_value": unit_id} if unit_id is not None else None
+        )
+        scan_interval_field = vol.Optional(
+            CONF_SCAN_INTERVAL,
+            description={"suggested_value": scan_interval} if scan_interval is not None else None,
+        )
         return vol.Schema(
             {
                 vol.Required("name", default=value.get("name", "")): str,
                 vol.Required("platform", default=value.get("platform", "sensor")): vol.In(PLATFORMS),
                 vol.Required("table", default=value.get("table", "holding_register")): vol.In(TABLE_OPTIONS),
                 vol.Required("register", default=value.get("register", 0)): vol.All(int, vol.Range(min=0)),
+                unit_id_field: vol.All(int, vol.Range(min=0, max=MAX_UNIT_ID)),
+                scan_interval_field: vol.All(int, vol.Range(min=1)),
                 vol.Required("data_type", default=value.get("data_type", "int16")): vol.In(DATA_TYPES),
                 vol.Optional(
                     "advanced_calculation", default=value.get("advanced_calculation", False)
@@ -473,6 +487,8 @@ class UniversalModbusOptionsFlow(config_entries.OptionsFlow):
             schema[vol.Optional("feedback_register", default=value.get("feedback_register") or 0)] = vol.All(
                 int, vol.Range(min=0)
             )
+            if platform in WRITABLE_PLATFORMS:
+                schema[vol.Optional("write_confirmation", default=value.get("write_confirmation", True))] = bool
             if platform in {"switch", "toggle_switch", "button"}:
                 schema[vol.Required("command_on", default=int(value.get("command_on", 1)))] = int
                 schema[vol.Required("command_off", default=int(value.get("command_off", 0)))] = int
@@ -531,6 +547,8 @@ class UniversalModbusOptionsFlow(config_entries.OptionsFlow):
                 "platform": platform,
                 "table": user_input["table"],
                 "register": user_input["register"],
+                "unit_id": user_input.get("unit_id"),
+                CONF_SCAN_INTERVAL: user_input.get(CONF_SCAN_INTERVAL),
                 "data_type": user_input["data_type"],
                 "count": automatic_count_for_data_type(user_input["data_type"]),
                 "scale": user_input.get("scale", 1.0),
@@ -549,6 +567,7 @@ class UniversalModbusOptionsFlow(config_entries.OptionsFlow):
                 "write_mode": user_input.get("write_mode", "auto"),
                 "feedback_table": user_input.get("feedback_table") or None,
                 "feedback_register": user_input.get("feedback_register") if user_input.get("feedback_table") else None,
+                "write_confirmation": user_input.get("write_confirmation", True),
                 "command_on": user_input.get("command_on", 1),
                 "command_off": user_input.get("command_off", 0),
                 "pulse_ms": user_input.get("pulse_ms") or None,

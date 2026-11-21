@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.4.0 - 2026-11-21
+
+### Added
+
+- Entities can use different Modbus Unit IDs over one hub's TCP connection.
+  Leaving an entity's Unit ID blank uses the hub default. [#7](https://github.com/Idelmaeaen/HA-Universal-Modbus/issues/7)
+- Entities can override the hub's scan interval. Entities with the same interval
+  are polled together, with contiguous reads batched by unit and register area. [#8](https://github.com/Idelmaeaen/HA-Universal-Modbus/issues/8)
+
+### Changed
+
+- Writable entities can read their feedback register immediately after a Modbus
+  write acknowledgement or after the last command of a pulse. This confirmation
+  is enabled by default when a feedback register is configured. Ordinary writes
+  update the entity on acknowledgement without triggering a full hub scan. [#8](https://github.com/Idelmaeaen/HA-Universal-Modbus/issues/8)
+
+### Fixed
+
+- The **Add entity** button is available above the table. Long register names
+  wrap, and live errors update without resetting the table's scroll position. [#6](https://github.com/Idelmaeaen/HA-Universal-Modbus/issues/6)
+- Renaming a register updates the integration-provided entity name in Home
+  Assistant and preserves the existing entity ID and any custom name. [#6](https://github.com/Idelmaeaen/HA-Universal-Modbus/issues/6)
+- Hub creation, editing, and import now accept Unit ID 255. [#9](https://github.com/Idelmaeaen/HA-Universal-Modbus/issues/9)
+
 ## 1.3.2 - 2026-10-24
 
 ### Fixed

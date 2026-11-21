@@ -7,6 +7,9 @@ from pathlib import Path
 import sys
 import types
 
+import pytest
+import voluptuous as vol
+
 PACKAGE_PATH = Path(__file__).parents[1] / "custom_components" / "universal_modbus"
 sys.modules.setdefault("custom_components", types.ModuleType("custom_components"))
 package = sys.modules.setdefault(
@@ -18,8 +21,10 @@ package.__path__ = [str(PACKAGE_PATH)]
 from custom_components.universal_modbus.config_flow import (  # noqa: E402
     FEEDBACK_TABLE_OPTIONS,
     TABLE_OPTIONS,
+    UniversalModbusConfigFlow,
     UniversalModbusOptionsFlow,
 )
+from custom_components.universal_modbus.frontend import HUB_SCHEMA  # noqa: E402
 
 
 def _schema_keys(schema) -> set[str]:
@@ -232,3 +237,45 @@ def test_entity_input_keeps_write_mode() -> None:
     )
 
     assert _flow()._entity_from_input(values, "setpoint").write_mode == "multiple"
+
+
+def test_hub_unit_id_255_is_accepted_in_both_setup_paths() -> None:
+    flow = UniversalModbusConfigFlow()
+    flow.async_show_form = lambda **kwargs: kwargs
+    schema = asyncio.run(flow.async_step_user())["data_schema"]
+    hub = {"name": "Boiler", "host": "192.0.2.1", "slave": 255}
+
+    for validate in (schema, HUB_SCHEMA):
+        assert validate(hub)["slave"] == 255
+        with pytest.raises(vol.Invalid):
+            validate({**hub, "slave": 256})
+
+
+def test_entity_polling_overrides_round_trip_and_can_be_cleared() -> None:
+    values = _entity_input(unit_id=0, scan_interval=60)
+    flow = _flow()
+    entity = flow._entity_from_input(values, "status")
+    assert entity.to_dict()["unit_id"] == 0
+    assert entity.to_dict()["scan_interval"] == 60
+
+    schema = flow._entity_base_schema(entity.to_dict())
+    suggested = {field.schema: field.description for field in schema.schema}
+    assert suggested["unit_id"] == {"suggested_value": 0}
+    assert suggested["scan_interval"] == {"suggested_value": 60}
+
+    flow._selected = entity.to_dict
+
+    async def edit_details():
+        return flow._entity_from_input(flow._entity_draft, entity.key)
+
+    flow.async_step_edit_entity_details = edit_details
+    edited = asyncio.run(flow.async_step_edit_entity({"name": "New name", "platform": "sensor"}))
+    assert (edited.name, edited.key) == ("New name", "status")
+    assert edited.unit_id is None
+    assert edited.scan_interval is None
+
+
+@pytest.mark.parametrize(("field", "value"), [("unit_id", 256), ("scan_interval", 0)])
+def test_invalid_polling_overrides_are_rejected(field, value) -> None:
+    with pytest.raises(ValueError):
+        _flow()._entity_from_input(_entity_input(**{field: value}), "status")

@@ -5,14 +5,15 @@
 # Universal Modbus
 
 Universal Modbus is a custom Home Assistant integration for Modbus TCP devices.
-Connections and entities are configured through the Home Assistant UI; no YAML
-configuration is required.
+Configure connections and entities through the Home Assistant UI.
 
 Universal Modbus is developed and maintained by **Edelmann Electronics**.
 
 ## Features
 
 - Create and manage multiple Modbus TCP hubs in the sidebar
+- Share a TCP connection across entities on different Unit IDs
+- Set how often each entity is polled
 - Read coils, discrete inputs, holding registers, and input registers
 - Write coils and holding registers
 - Create `sensor`, `binary_sensor`, `switch`, `button`, `number`, and `select`
@@ -20,13 +21,14 @@ Universal Modbus is developed and maintained by **Edelmann Electronics**.
 - Decode `bool`, `int16`, `uint16`, `int32`, `uint32`, `int64`, `uint64`, and `float32` values
 - Configure scaling, offsets, byte order, and word order
 - Use safe per-entity read and write formulas for advanced calculations
-- Use a separate feedback register for writable entities
+- Read a separate feedback register immediately to confirm a write
 - Display and control entity values directly in the sidebar
 - Import and export a complete hub
 - English and German UI translations
 
-The integration combines overlapping and adjacent reads from the same Modbus
-table. A request contains at most 125 registers or 2,000 bits.
+The integration combines overlapping and adjacent reads that share a unit,
+register area, and scan interval. A request contains at most 125 registers or
+2,000 bits.
 
 ## Supported entity types
 
@@ -34,7 +36,7 @@ table. A request contains at most 125 registers or 2,000 bits.
 | --- | --- |
 | `sensor` | Publishes numeric, boolean, or mapped text values. |
 | `binary_sensor` | Converts the decoded value to an on/off state. |
-| `switch` | Writes configurable on/off values and reports the polled state. |
+| `switch` | Writes configurable on/off values and reports the acknowledged command or the configured feedback state. |
 | `toggle_switch` | Sends an on/off pulse whenever its state is changed. |
 | `button` | Writes an on value and can optionally send an off value after a configured pulse duration. |
 | `number` | Writes numeric values within the configured minimum, maximum, and step. |
@@ -44,6 +46,9 @@ Switches, buttons, numbers, and selects can also be configured as read-only.
 Writable entities must use a coil or holding register as their write target.
 
 ## Installation
+
+Requires Home Assistant 2024.12.0 or later. For release and upgrade details, see
+the [changelog](CHANGELOG.md).
 
 ### HACS
 
@@ -76,13 +81,13 @@ Restart Home Assistant afterward.
    | Device name | Name of the Home Assistant hub and device | None |
    | Host | Hostname or IP address of the Modbus TCP server | None |
    | Port | TCP port | `502` |
-   | Unit ID | Modbus unit/slave ID (`0` to `247`) | `1` |
-   | Scan interval | Polling interval in seconds | `5` |
+   | Unit ID | Default Modbus unit/slave ID (`0` to `255`) | `1` |
+   | Scan interval | Default polling interval in seconds | `5` |
    | Timeout | Connection timeout in seconds | `3` |
 
-Port, scan interval, and timeout must be positive whole numbers. The port may
-not exceed `65535`. Each combination of host, port, and Unit ID can be added
-only once.
+Use a port from `1` to `65535` and positive whole seconds for the scan interval
+and timeout. Each combination of host, port, and default Unit ID identifies a
+hub. Use Unit ID `255` when the device documentation specifies it.
 
 The device must be reachable during setup. If it is unavailable or all
 configured reads fail, Home Assistant retries loading the integration.
@@ -99,33 +104,33 @@ Open **Universal Modbus** in the Home Assistant sidebar. From there you can:
 - Scroll the entity table horizontally on narrow mobile screens
 - View connection status, response time, communication errors, and the last
   successful poll
-- Refresh values manually and control writable entities
+- Refresh the displayed values and control writable entities
 - Remove orphaned Home Assistant entities
 
 **Settings > Devices & services > Universal Modbus > Configure** links to this
 editor.
 
-The upload and download buttons import or export the hub configuration and its
-entities. For privacy, exports omit the IP address and exporter identity; the IP
-address is requested during import.
+The upload and download buttons import or export a complete hub as JSON.
+Exports omit the host and exporter identity. Enter the host when importing.
+The [Kostal KSEM G2 export](profiles/kostal/ksem-g2.json) uses this format.
 
-The entity list keeps its vertical scroll position while live Modbus values are
-refreshed. On narrow screens, the table can also be scrolled horizontally, and
-that position is preserved as well.
+To replace a hub's profile and entity list while keeping its connection
+settings, use **Import profile** in the integration's options and paste the
+profile JSON. The [example profile](profiles/example_device.json) uses this
+format.
+
+Use **Add entity** above the table. Long entity names wrap, and live value and
+diagnostic updates preserve the table while you scroll.
 
 ### Screenshots
 
-Hub overview:
+The screenshots show a gateway with a pump and an energy meter.
 
 ![Universal Modbus hub overview](docs/images/hub-overview.png)
 
-Hub settings:
-
 ![Universal Modbus hub settings](docs/images/hub-editor.png)
 
-Entity settings:
-
-<img src="docs/images/entity-editor-1.3.0.png" alt="Universal Modbus entity settings" width="760">
+<img src="docs/images/entity-editor-1.4.0.png" alt="Entity settings showing Unit ID, scan interval, and immediate write confirmation" width="760">
 
 ## Entity configuration
 
@@ -134,6 +139,7 @@ area, and data type. The most important settings are:
 
 - Name, entity type, icon, and Home Assistant device/state class
 - Modbus table and zero-based register address
+- Optional Unit ID and scan interval in seconds
 - Data type, scale, offset, unit, and displayed decimal places
 - Optional advanced read and write formulas
 - Optional feedback table and register
@@ -142,7 +148,24 @@ area, and data type. The most important settings are:
 - Minimum, maximum, and step for numbers
 - Value mappings for enum sensors and selects
 
-Entity keys are generated from the name and stay unchanged during normal edits.
+### Unit IDs and scan intervals
+
+Set the Unit ID and scan interval in the **Modbus** section of the entity
+editor. A blank field inherits the corresponding hub default, including in
+profiles created before version 1.4.0. Entities with the same effective
+interval are polled together.
+
+For a Modbus TCP-to-RTU gateway, create one hub using the gateway's host and
+port. Assign the downstream Unit ID to each entity. For example, set a pump's
+alarm on Unit ID `2` to poll every `2` seconds and a meter on Unit ID `3` to
+poll every `60` seconds. Both use the same TCP connection. The configured Unit
+ID applies to reads, writes, and feedback for each entity.
+
+### Entity names
+
+Renaming a register updates the integration's Home Assistant entity name.
+Home Assistant name overrides and entity IDs are retained. Entity keys are
+generated from the name and stay unchanged during normal edits.
 Regenerating keys changes Home Assistant unique IDs and can affect entity IDs,
 history, dashboards, and automations.
 
@@ -171,8 +194,6 @@ requested count; a separate read mode is therefore not required.
   Writes reverse this calculation before encoding.
 - Byte order controls the bytes inside each register. Word order controls the
   registers of a multi-register value. Both settings apply to the complete hub.
-- A feedback register lets a writable entity read its state from a different
-  Modbus address than its write target.
 - Enum sensors can map raw values to text. Select options map displayed labels
   to integer values.
 
@@ -193,6 +214,21 @@ function required by the device documentation:
 `Auto` preserves the behavior of profiles created before version 1.2.0. The
 single-register option is unavailable for data types that occupy more than one
 register.
+
+### Write feedback
+
+Choose a **Feedback source** and **Feedback register** to read the entity's
+state from a different Modbus address on the same unit.
+**Confirm write with immediate feedback** is enabled by default for configured
+feedback. It reads that register once after the device acknowledges the write,
+or after the last command in a pulse. The returned value supplies the entity
+state. A failed feedback read reports that the write was acknowledged and that
+the state could not be read.
+
+For ordinary writes without immediate confirmation, the acknowledgement
+updates the entity with the requested value. Scheduled polling continues on
+the configured interval. A pulse with a separate feedback register and
+confirmation disabled leaves the feedback state to the next scheduled poll.
 
 ### Advanced calculations
 
@@ -246,11 +282,10 @@ other valid entities continue updating. The sidebar shows the current error.
 Each hub also provides diagnostic entities for response time, communication
 error count, and the last successful poll.
 
-After a successful write, the integration requests an immediate refresh.
-
 ## Known limitations
 
-- Only Modbus TCP is supported; Modbus RTU/serial is not implemented.
+- The integration speaks Modbus TCP. A TCP-to-RTU gateway is required for
+  serial devices.
 - Writes are limited to coils and holding registers.
 - Strings, bitfields, and custom encodings are not supported.
 - Device discovery is not implemented.

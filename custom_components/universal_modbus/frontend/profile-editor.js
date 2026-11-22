@@ -7,6 +7,113 @@ const TABLE_LABELS = {
   input_register: "0x04 Read Input Registers",
 };
 const DATA_TYPES = ["bool", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32"];
+
+// 中文词条字典（英文原文 -> 中文）。覆盖面板上的按钮、表头、提示框、表单标签、
+// 公式帮助说明以及原本硬编码的英文标签。_t() 在中文环境下按此表回退翻译。
+const ZH = {
+  "Loading\u2026": "\u52A0\u8F7D\u4E2D\u2026",
+  "Version": "\u7248\u672C",
+  "Response time": "\u54CD\u5E94\u65F6\u95F4",
+  "Communication errors": "\u901A\u4FE1\u9519\u8BEF",
+  "Last successful poll": "\u4E0A\u6B21\u6210\u529F\u8F6E\u8BE2",
+  "Connected": "\u5DF2\u8FDE\u63A5",
+  "Disconnected": "\u672A\u8FDE\u63A5",
+  "Import hub": "\u5BFC\u5165\u96C6\u7EBF\u5668",
+  "Add hub": "\u6DFB\u52A0\u96C6\u7EBF\u5668",
+  "No Universal Modbus hub configured.": "\u5C1A\u672A\u914D\u7F6E Universal Modbus \u96C6\u7EBF\u5668\u3002",
+  "Hub": "\u96C6\u7EBF\u5668",
+  "Edit": "\u7F16\u8F91",
+  "Duplicate": "\u590D\u5236",
+  "Delete": "\u5220\u9664",
+  "Manufacturer": "\u5236\u9020\u5546",
+  "Model": "\u578B\u53F7",
+  "Description": "\u63CF\u8FF0",
+  "Current error": "\u5F53\u524D\u9519\u8BEF",
+  "Open device": "\u6253\u5F00\u8BBE\u5907",
+  "Export hub": "\u5BFC\u51FA\u96C6\u7EBF\u5668",
+  "Regenerate entity keys": "\u91CD\u65B0\u751F\u6210\u5B9E\u4F53\u952E",
+  "Remove orphaned entities": "\u6E05\u7406\u5B64\u7ACB\u5B9E\u4F53",
+  "Edit hub": "\u7F16\u8F91\u96C6\u7EBF\u5668",
+  "Delete hub": "\u5220\u9664\u96C6\u7EBF\u5668",
+  "Add entity": "\u6DFB\u52A0\u5B9E\u4F53",
+  "Refresh values": "\u5237\u65B0\u6570\u503C",
+  "Entities": "\u5B9E\u4F53",
+  "Name": "\u540D\u79F0",
+  "Type": "\u7C7B\u578B",
+  "Area": "\u533A\u57DF",
+  "Register": "\u5BC4\u5B58\u5668",
+  "Current value": "\u5F53\u524D\u503C",
+  "On": "\u5F00",
+  "Off": "\u5173",
+  "Switch value": "\u5207\u6362\u6570\u503C",
+  "Press": "\u6309\u4E0B",
+  "Hub name": "\u96C6\u7EBF\u5668\u540D\u79F0",
+  "Communication": "\u901A\u4FE1",
+  "Scan interval": "\u626B\u63CF\u95F4\u9694",
+  "Timeout": "\u8D85\u65F6",
+  "Byte order": "\u5B57\u8282\u5E8F",
+  "Word order": "\u5B57\u5E8F",
+  "Cancel": "\u53D6\u6D88",
+  "Save": "\u4FDD\u5B58",
+  "Invalid hub export file": "\u65E0\u6548\u7684\u96C6\u7EBF\u5668\u5BFC\u51FA\u6587\u4EF6",
+  "IP address": "IP \u5730\u5740",
+  "Import": "\u5BFC\u5165",
+  "Write mode": "\u5199\u5165\u6A21\u5F0F",
+  "Displayed decimal places": "\u663E\u793A\u5C0F\u6570\u4F4D\u6570",
+  "Icon": "\u56FE\u6807",
+  "Unit": "\u5355\u4F4D",
+  "Select or enter a unit": "\u9009\u62E9\u6216\u8F93\u5165\u5355\u4F4D",
+  "Feedback register": "\u53CD\u9988\u5BC4\u5B58\u5668",
+  "Confirm write with immediate feedback": "\u901A\u8FC7\u5373\u65F6\u53CD\u9988\u786E\u8BA4\u5199\u5165",
+  "On command": "\u5F00\u542F\u547D\u4EE4\u503C",
+  "Off command": "\u5173\u95ED\u547D\u4EE4\u503C",
+  "Entity type": "\u5B9E\u4F53\u7C7B\u578B",
+  "Device class": "\u8BBE\u5907\u7C7B\u522B",
+  "State class": "\u72B6\u6001\u7C7B\u522B",
+  "Scale": "\u7F29\u653E\u7CFB\u6570",
+  "Pulse duration (ms)": "\u8109\u51B2\u6301\u7EED\u65F6\u95F4\uff08\u6BEB\u79D2\uff09",
+  "Step": "\u6B65\u957F",
+  "Options as JSON": "\u9009\u9879\uff08JSON \u683C\u5F0F\uff09",
+  "Read formula": "\u8BFB\u53D6\u516C\u5F0F",
+  "Write formula": "\u5199\u5165\u516C\u5F0F",
+  "Calculation": "\u8BA1\u7B97",
+  "Advanced calculation": "\u9AD8\u7EA7\u8BA1\u7B97",
+  "Generated when saved": "\u4FDD\u5B58\u65F6\u751F\u6210",
+  "Edit entity": "\u7F16\u8F91\u5B9E\u4F53",
+  "Hub default": "\u96C6\u7EBF\u5668\u9ED8\u8BA4\u503C",
+  "Scan interval (s)": "\u626B\u63CF\u95F4\u9694\uff08\u79D2\uff09",
+  "Register area": "\u5BC4\u5B58\u5668\u533A\u57DF",
+  "Data type": "\u6570\u636E\u7C7B\u578B",
+  "Feedback source": "\u53CD\u9988\u6765\u6E90",
+  "Properties": "\u5C5E\u6027",
+  // 多行长文案
+  "Remove all Home Assistant entities that belong to this hub but are no longer present in its profile?": "\u662F\u5426\u79FB\u9664\u6240\u6709\u5C5E\u4E8E\u8BE5\u96C6\u7EBF\u5668\u3001\u4F46\u5DF2\u4E0D\u5728\u5176\u914D\u7F6E\u6863\u6848\u4E2D\u7684 Home Assistant \u5B9E\u4F53\uff1f",
+  "Regenerating all entity keys changes Home Assistant unique IDs. Existing entities may be recreated and custom entity IDs, history links, dashboard references, or automations may need updates. Continue?": "\u91CD\u65B0\u751F\u6210\u6240\u6709\u5B9E\u4F53\u952E\u4F1A\u66F4\u6539 Home Assistant \u7684\u552F\u4E00 ID\u3002\u73B0\u6709\u5B9E\u4F53\u53EF\u80FD\u4F1A\u88AB\u91CD\u5EFA\uff0C\u81EA\u5B9A\u4E49\u5B9E\u4F53 ID\u3001\u5386\u53F2\u8BB0\u5F55\u94FE\u63A5\u3001\u4EEA\u8868\u76D8\u5F15\u7528\u6216\u81EA\u52A8\u5316\u53EF\u80FD\u9700\u8981\u66F4\u65B0\u3002\u662F\u5426\u7EE7\u7EED\uff1f",
+  "Read formulas use register_value; write formulas use value. scale and offset are available in both. Supported: +, -, *, /, //, %, comparisons, if/else, abs, min, max, round, int, float, and bool. Examples: None if register_value == 65535 else register_value / 10; 100 if register_value > 0 else 0.": "\u8BFB\u53D6\u516C\u5F0F\u4F7F\u7528 register_value\uff0c\u5199\u5165\u516C\u5F0F\u4F7F\u7528 value\uff1b\u4E24\u8005\u5747\u53EF\u4F7F\u7528 scale \u548C offset\u3002\u652F\u6301\uff1a\u52A0\u51CF\u4E58\u9664\u3001\u6BD4\u8F83\u3001if/else\u3001abs\u3001min\u3001max\u3001round\u3001int\u3001float \u548C bool\u3002\u793A\u4F8B\uff1a\u82E5 register_value \u4E3A 65535 \u5219\u4E3A None\uff0c\u5426\u5219\u4E3A register_value / 10\uff1b\u82E5 register_value > 0 \u5219\u4E3A 100\uff0c\u5426\u5219\u4E3A 0\u3002",
+  // 原本硬编码的英文标签
+  "0x01 Read Coils": "0x01 \u8BFB\u53D6\u7EBF\u5708",
+  "0x02 Read Discrete Inputs": "0x02 \u8BFB\u53D6\u79BB\u6563\u8F93\u5165",
+  "0x03 Read Holding Registers": "0x03 \u8BFB\u53D6\u4FDD\u6301\u5BC4\u5B58\u5668",
+  "0x04 Read Input Registers": "0x04 \u8BFB\u53D6\u8F93\u5165\u5BC4\u5B58\u5668",
+  "0x05 Write Single Coil": "0x05 \u5199\u5165\u5355\u4E2A\u7EBF\u5708",
+  "0x0F Write Multiple Coils": "0x0F \u5199\u5165\u591A\u4E2A\u7EBF\u5708",
+  "0x06 Write Single Register": "0x06 \u5199\u5165\u5355\u4E2A\u5BC4\u5B58\u5668",
+  "0x10 Write Multiple Registers": "0x10 \u5199\u5165\u591A\u4E2A\u5BC4\u5B58\u5668",
+  "ToggleSwitch": "\u5207\u6362\u5F00\u5173",
+  "Auto": "\u81EA\u52A8",
+  "None": "\u65E0",
+  "Read Only": "\u53EA\u8BFB",
+  "Host": "\u4E3B\u673A",
+  "Port": "\u7AEF\u53E3",
+  "Unit ID": "\u5355\u5143 ID",
+  "Offset": "\u504F\u79FB",
+  "Minimum": "\u6700\u5C0F\u503C",
+  "Maximum": "\u6700\u5927\u503C",
+  "Big-Endian": "\u5927\u7AEF\u5E8F",
+  "Little-Endian": "\u5C0F\u7AEF\u5E8F",
+  "Unit ": "\u5355\u5143 ",
+};
+
 const SELECTED_HUB_STORAGE_KEY = "universal_modbus.selected_hub";
 const MAX_UNIT_ID = 255;
 const DEFAULT_READ_FORMULA = "register_value * scale + offset";
@@ -60,8 +167,18 @@ class UniversalModbusPanel extends HTMLElement {
   set panel(panel) { this._panel = panel; }
   set route(route) { this._route = route; }
 
-  _t(en, de) {
+  _isZh() {
+    return this._hass?.language?.toLowerCase().startsWith("zh") ?? false;
+  }
+
+  _t(en, de, zh) {
+    if (this._isZh()) return zh ?? ZH[en] ?? en;
     return this._hass?.language?.toLowerCase().startsWith("de") ? de : en;
+  }
+
+  // 翻译原本硬编码的英文标签（无德文对应项），非中文环境原样返回。
+  _l(en) {
+    return this._isZh() ? (ZH[en] ?? en) : en;
   }
 
   async _load() {
@@ -377,7 +494,7 @@ class UniversalModbusPanel extends HTMLElement {
     const entry = this._entry;
     const entities = entry.profile.entities || [];
     const hubSelector = `<div class="hub-picker"><label for="hub">${this._t("Hub", "Hub")}</label><select class="hub" id="hub">${entries.map((item) => `<option value="${item.entry_id}" ${item.entry_id === this._entryId ? "selected" : ""}>${this._escape(item.title)}</option>`).join("")}</select></div>`;
-    const rows = this._sortedEntities(entities).map(({ entity, index }) => `<tr data-entity-index="${index}"><td class="entity-icon">${entity.icon ? `<ha-icon icon="${this._escape(entity.icon)}"></ha-icon>` : ""}</td><td class="entity-name">${entry.entity_ids?.[entity.key] ? `<button class="entity-link" data-entity-id="${this._escape(entry.entity_ids[entity.key])}" title="${this._escape(entry.entity_ids[entity.key])}">${this._escape(entity.name)}</button>` : this._escape(entity.name)}</td><td>${this._escape(entity.platform === "toggle_switch" ? "ToggleSwitch" : entity.platform)}</td><td>${this._escape(TABLE_LABELS[entity.table] || entity.table)}</td><td>${this._escape(entity.register)}${entity.unit_id == null ? "" : `<small class="entity-detail">Unit ${this._escape(entity.unit_id)}</small>`}</td><td class="entity-value" data-index="${index}">${this._valueControl(entity)}</td><td class="actions"><button class="icon edit" data-index="${index}" title="${this._t("Edit", "Bearbeiten")}"><ha-icon icon="mdi:pencil"></ha-icon></button><button class="icon duplicate" data-index="${index}" title="${this._t("Duplicate", "Duplizieren")}"><ha-icon icon="mdi:content-copy"></ha-icon></button><button class="icon danger delete" data-index="${index}" title="${this._t("Delete", "L\u00F6schen")}"><ha-icon icon="mdi:delete"></ha-icon></button></td></tr>`).join("");
+    const rows = this._sortedEntities(entities).map(({ entity, index }) => `<tr data-entity-index="${index}"><td class="entity-icon">${entity.icon ? `<ha-icon icon="${this._escape(entity.icon)}"></ha-icon>` : ""}</td><td class="entity-name">${entry.entity_ids?.[entity.key] ? `<button class="entity-link" data-entity-id="${this._escape(entry.entity_ids[entity.key])}" title="${this._escape(entry.entity_ids[entity.key])}">${this._escape(entity.name)}</button>` : this._escape(entity.name)}</td><td>${this._escape(this._l(entity.platform === "toggle_switch" ? "ToggleSwitch" : entity.platform))}</td><td>${this._escape(this._l(TABLE_LABELS[entity.table] || entity.table))}</td><td>${this._escape(entity.register)}${entity.unit_id == null ? "" : `<small class="entity-detail">${this._l("Unit ")}${this._escape(entity.unit_id)}</small>`}</td><td class="entity-value" data-index="${index}">${this._valueControl(entity)}</td><td class="actions"><button class="icon edit" data-index="${index}" title="${this._t("Edit", "Bearbeiten")}"><ha-icon icon="mdi:pencil"></ha-icon></button><button class="icon duplicate" data-index="${index}" title="${this._t("Duplicate", "Duplizieren")}"><ha-icon icon="mdi:content-copy"></ha-icon></button><button class="icon danger delete" data-index="${index}" title="${this._t("Delete", "L\u00F6schen")}"><ha-icon icon="mdi:delete"></ha-icon></button></td></tr>`).join("");
     const h = entry.hub;
     const connected = entry.connected && entry.last_update_success;
     const metadata = [
@@ -391,7 +508,7 @@ class UniversalModbusPanel extends HTMLElement {
     const hubDiagnostics = `<div class="hub-diagnostics">${diagnostics.map(([label, value]) => `<div class="diagnostic"><span class="diagnostic-label">${this._escape(label)}</span><span class="diagnostic-value">${this._escape(value)}</span></div>`).join("")}</div>`;
     const deviceLink = entry.device_id ? `<a class="icon device-hub" href="/config/devices/device/${encodeURIComponent(entry.device_id)}" title="${this._t("Open device", "Ger\u00E4t \u00F6ffnen")}" aria-label="${this._t("Open device", "Ger\u00E4t \u00F6ffnen")}"><ha-icon icon="mdi:open-in-new"></ha-icon></a>` : "";
     const actions = `<div class="header-actions">${hubSelector}${deviceLink}<button class="icon import-hub" title="${this._t("Import hub", "Hub importieren")}"><ha-icon icon="mdi:upload"></ha-icon></button><button class="icon export-hub" title="${this._t("Export hub", "Hub exportieren")}"><ha-icon icon="mdi:download"></ha-icon></button><button class="icon regenerate-keys" title="${this._t("Regenerate entity keys", "Entit\u00E4ts-Keys neu generieren")}"><ha-icon icon="mdi:key-change"></ha-icon></button><button class="icon cleanup-entities" title="${this._t("Remove orphaned entities", "Entit\u00E4ts-Leichen entfernen")}"><ha-icon icon="mdi:broom"></ha-icon></button><button class="icon add-hub" title="${this._t("Add hub", "Hub hinzuf\u00FCgen")}"><ha-icon icon="mdi:plus"></ha-icon></button><button class="icon edit-hub" title="${this._t("Edit hub", "Hub bearbeiten")}"><ha-icon icon="mdi:pencil"></ha-icon></button><button class="icon danger delete-hub" title="${this._t("Delete hub", "Hub l\u00F6schen")}"><ha-icon icon="mdi:delete"></ha-icon></button><input type="file" class="hub-file" accept="application/json,.json" hidden></div>`;
-    this.shadowRoot.innerHTML = `<div class="page">${this._header(actions)}<div class="hub-card card"><div class="hub-main"><div class="hub-summary"><strong class="hub-title">${this._escape(entry.title)}</strong>${hubMetadata}<span class="hub-connection">${this._escape(h.host)}:${h.port} \u00B7 Unit ${h.slave} \u00B7 ${h.scan_interval}s</span></div><div class="hub-health"><span class="status ${connected ? "connected" : ""}">${connected ? this._t("Connected", "Verbunden") : this._t("Disconnected", "Nicht verbunden")}</span>${hubDiagnostics}</div></div></div><div class="toolbar"><button class="button primary add">${this._t("Add entity", "Entit\u00E4t hinzuf\u00FCgen")}</button><button class="button secondary refresh">${this._t("Refresh values", "Werte aktualisieren")}</button></div><div class="card entity-table" data-entry-id="${this._escape(this._entryId)}" role="region" aria-label="${this._t("Entities", "Entit\u00E4ten")}" tabindex="0"><table><thead><tr><th></th>${this._sortHeader("name", this._t("Name", "Name"))}${this._sortHeader("platform", this._t("Type", "Typ"))}${this._sortHeader("table", this._t("Area", "Bereich"))}${this._sortHeader("register", this._t("Register", "Register"))}${this._sortHeader("value", this._t("Current value", "Aktueller Wert"))}<th></th></tr></thead><tbody>${rows}</tbody></table></div></div>${this._styles()}`;
+    this.shadowRoot.innerHTML = `<div class="page">${this._header(actions)}<div class="hub-card card"><div class="hub-main"><div class="hub-summary"><strong class="hub-title">${this._escape(entry.title)}</strong>${hubMetadata}<span class="hub-connection">${this._escape(h.host)}:${h.port} \u00B7 ${this._l("Unit ")}${h.slave} \u00B7 ${h.scan_interval}s</span></div><div class="hub-health"><span class="status ${connected ? "connected" : ""}">${connected ? this._t("Connected", "Verbunden") : this._t("Disconnected", "Nicht verbunden")}</span>${hubDiagnostics}</div></div></div><div class="toolbar"><button class="button primary add">${this._t("Add entity", "Entit\u00E4t hinzuf\u00FCgen")}</button><button class="button secondary refresh">${this._t("Refresh values", "Werte aktualisieren")}</button></div><div class="card entity-table" data-entry-id="${this._escape(this._entryId)}" role="region" aria-label="${this._t("Entities", "Entit\u00E4ten")}" tabindex="0"><table><thead><tr><th></th>${this._sortHeader("name", this._t("Name", "Name"))}${this._sortHeader("platform", this._t("Type", "Typ"))}${this._sortHeader("table", this._t("Area", "Bereich"))}${this._sortHeader("register", this._t("Register", "Register"))}${this._sortHeader("value", this._t("Current value", "Aktueller Wert"))}<th></th></tr></thead><tbody>${rows}</tbody></table></div></div>${this._styles()}`;
     const entityTable = this.shadowRoot.querySelector(".entity-table");
     this._renderedValueTokens = new Map(entities.map((entity, index) => [index, this._valueToken(entity)]));
     entityTable.scrollLeft = this._tableScrollLeft;
@@ -491,7 +608,7 @@ class UniversalModbusPanel extends HTMLElement {
     ))) return;
     try {
       const result = await this._hass.connection.sendMessagePromise({ type: "universal_modbus/hub/cleanup_entities", entry_id: this._entryId });
-      alert(this._t(result.removed + " orphaned entities removed.", result.removed + " Entit\u00E4ts-Leichen entfernt."));
+      alert(this._t(result.removed + " orphaned entities removed.", result.removed + " Entit\u00E4ts-Leichen entfernt.", `\u5DF2\u6E05\u7406 ${result.removed} \u4E2A\u5B64\u7ACB\u5B9E\u4F53\u3002`));
       await this._refresh();
     } catch (err) {
       alert(err.message || String(err));
@@ -505,15 +622,15 @@ class UniversalModbusPanel extends HTMLElement {
     const dialog = document.createElement("div"); dialog.className = "modal-backdrop";
     const field = (name, label, value, type = "text", extra = "") => `<div class="field"><label>${label}</label><input name="${name}" type="${type}" value="${this._escape(value)}" ${extra}></div>`;
     const secondsField = (name, label, value) => `<div class="field"><label>${label}</label><div class="input-unit"><input name="${name}" type="number" value="${this._escape(value)}" min="1" inputmode="numeric"><span>s</span></div></div>`;
-    const order = (name, label, value) => `<div class="field"><label>${label}</label><select name="${name}"><option value="big" ${value === "big" ? "selected" : ""}>Big-Endian</option><option value="little" ${value === "little" ? "selected" : ""}>Little-Endian</option></select></div>`;
-    dialog.innerHTML = `<div class="dialog"><h2>${entry ? this._t("Edit hub", "Hub bearbeiten") : this._t("Add hub", "Hub hinzuf\u00FCgen")}</h2><form><div class="grid">${field("name", this._t("Hub name", "Hub-Name"), hub.name || entry?.title || "", "text", "required")}${field("manufacturer", this._t("Manufacturer", "Hersteller"), profile.manufacturer)}${field("model", this._t("Model", "Modell"), profile.model)}${field("description", this._t("Description", "Beschreibung"), profile.description)}<section class="group"><h3 class="group-title">${this._t("Communication", "Kommunikation")}</h3><div class="group-grid">${field("host", "Host", hub.host, "text", "required")}${field("port", "Port", hub.port, "number", 'min="1" max="65535"')}${field("slave", "Unit ID", hub.slave, "number", `min="0" max="${MAX_UNIT_ID}"`)}${secondsField("scan_interval", this._t("Scan interval", "Abfrageintervall"), hub.scan_interval)}${secondsField("timeout", this._t("Timeout", "Zeit\u00FCberschreitung"), hub.timeout)}${order("byte_order", this._t("Byte order", "Byte-Reihenfolge"), profile.defaults?.byte_order)}${order("word_order", this._t("Word order", "Wort-Reihenfolge"), profile.defaults?.word_order)}</div></section></div><div class="buttons"><button type="button" class="button secondary cancel">${this._t("Cancel", "Abbrechen")}</button><button class="button primary">${this._t("Save", "Speichern")}</button></div></form></div>`;
+    const order = (name, label, value) => `<div class="field"><label>${label}</label><select name="${name}"><option value="big" ${value === "big" ? "selected" : ""}>${this._l("Big-Endian")}</option><option value="little" ${value === "little" ? "selected" : ""}>${this._l("Little-Endian")}</option></select></div>`;
+    dialog.innerHTML = `<div class="dialog"><h2>${entry ? this._t("Edit hub", "Hub bearbeiten") : this._t("Add hub", "Hub hinzuf\u00FCgen")}</h2><form><div class="grid">${field("name", this._t("Hub name", "Hub-Name"), hub.name || entry?.title || "", "text", "required")}${field("manufacturer", this._t("Manufacturer", "Hersteller"), profile.manufacturer)}${field("model", this._t("Model", "Modell"), profile.model)}${field("description", this._t("Description", "Beschreibung"), profile.description)}<section class="group"><h3 class="group-title">${this._t("Communication", "Kommunikation")}</h3><div class="group-grid">${field("host", this._l("Host"), hub.host, "text", "required")}${field("port", this._l("Port"), hub.port, "number", 'min="1" max="65535"')}${field("slave", this._l("Unit ID"), hub.slave, "number", `min="0" max="${MAX_UNIT_ID}"`)}${secondsField("scan_interval", this._t("Scan interval", "Abfrageintervall"), hub.scan_interval)}${secondsField("timeout", this._t("Timeout", "Zeit\u00FCberschreitung"), hub.timeout)}${order("byte_order", this._t("Byte order", "Byte-Reihenfolge"), profile.defaults?.byte_order)}${order("word_order", this._t("Word order", "Wort-Reihenfolge"), profile.defaults?.word_order)}</div></section></div><div class="buttons"><button type="button" class="button secondary cancel">${this._t("Cancel", "Abbrechen")}</button><button class="button primary">${this._t("Save", "Speichern")}</button></div></form></div>`;
     this.shadowRoot.appendChild(dialog);
     dialog.querySelector(".cancel").addEventListener("click", () => dialog.remove());
     dialog.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const values = Object.fromEntries(new FormData(event.target)); ["port", "slave", "scan_interval", "timeout"].forEach((key) => values[key] = Number(values[key])); const nextProfile = structuredClone(profile); Object.assign(nextProfile, { name: values.name, manufacturer: values.manufacturer, model: values.model, description: values.description }); nextProfile.defaults = { ...(nextProfile.defaults || {}), byte_order: values.byte_order, word_order: values.word_order }; const nextHub = { name: values.name, host: values.host, port: values.port, slave: values.slave, scan_interval: values.scan_interval, timeout: values.timeout }; try { const result = await this._hass.connection.sendMessagePromise({ type: "universal_modbus/hub/save", entry_id: entryId || undefined, hub: nextHub, profile: nextProfile }); this._setEntryId(result.entry_id); dialog.remove(); await this._refresh(); } catch (err) { alert(err.message || String(err)); } });
   }
 
   async _deleteHub() {
-    if (!confirm(this._t(`Delete hub \u201C${this._entry.title}\u201D?`, `Hub \u201E${this._entry.title}\u201C l\u00F6schen?`))) return;
+    if (!confirm(this._t(`Delete hub \u201C${this._entry.title}\u201D?`, `Hub \u201E${this._entry.title}\u201C l\u00F6schen?`, `\u786E\u5B9A\u5220\u9664\u96C6\u7EBF\u5668\u201C${this._entry.title}\u201D\u5417\uff1f`))) return;
     await this._hass.connection.sendMessagePromise({ type: "universal_modbus/hub/delete", entry_id: this._entryId }); this._setEntryId(null); await this._refresh();
   }
 
@@ -554,7 +671,7 @@ class UniversalModbusPanel extends HTMLElement {
     const profile = data.profile;
     const dialog = document.createElement("div"); dialog.className = "modal-backdrop";
     const field = (name, label, value, type = "text", extra = "") => `<div class="field"><label>${label}</label><input name="${name}" type="${type}" value="${this._escape(value)}" ${extra}></div>`;
-    dialog.innerHTML = `<div class="dialog"><h2>${this._t("Import hub", "Hub importieren")}</h2><form><div class="grid">${field("host", this._t("IP address", "IP-Adresse"), hub.host, "text", "required")}${field("port", "Port", hub.port, "number", 'min="1" max="65535"')}${field("slave", "Unit ID", hub.slave, "number", `min="0" max="${MAX_UNIT_ID}"`)}</div><div class="buttons"><button type="button" class="button secondary cancel">${this._t("Cancel", "Abbrechen")}</button><button type="submit" class="button primary">${this._t("Import", "Importieren")}</button></div></form></div>`;
+    dialog.innerHTML = `<div class="dialog"><h2>${this._t("Import hub", "Hub importieren")}</h2><form><div class="grid">${field("host", this._t("IP address", "IP-Adresse"), hub.host, "text", "required")}${field("port", this._l("Port"), hub.port, "number", 'min="1" max="65535"')}${field("slave", this._l("Unit ID"), hub.slave, "number", `min="0" max="${MAX_UNIT_ID}"`)}</div><div class="buttons"><button type="button" class="button secondary cancel">${this._t("Cancel", "Abbrechen")}</button><button type="submit" class="button primary">${this._t("Import", "Importieren")}</button></div></form></div>`;
     this.shadowRoot.appendChild(dialog);
     dialog.querySelector(".cancel").addEventListener("click", () => dialog.remove());
     dialog.querySelector("form").addEventListener("submit", async (event) => {
@@ -595,21 +712,21 @@ class UniversalModbusPanel extends HTMLElement {
     return `<div class="field readonly"><label for="${name}">${label}</label><input id="${name}" type="text" value="${this._escape(value)}" readonly></div>`;
   }
   _select(name, label, options, none = false) {
-    const optionLabel = (value) => TABLE_LABELS[value] || (value === "toggle_switch" ? "ToggleSwitch" : value);
-    const values = none ? [{ value: "", label: "None" }, ...options.map((value) => ({ value, label: optionLabel(value) }))] : options.map((value) => ({ value, label: optionLabel(value) }));
+    const optionLabel = (value) => this._l(TABLE_LABELS[value] || (value === "toggle_switch" ? "ToggleSwitch" : value));
+    const values = none ? [{ value: "", label: this._l("None") }, ...options.map((value) => ({ value, label: optionLabel(value) }))] : options.map((value) => ({ value, label: optionLabel(value) }));
     return `<div class="field"><label for="${name}">${label}</label><select id="${name}" name="${name}">${values.map((item) => `<option value="${this._escape(item.value)}" ${String(this._draft[name] ?? "") === String(item.value) ? "selected" : ""}>${this._escape(item.label)}</option>`).join("")}</select></div>`;
   }
 
   _writeModeSelect() {
-    let options = [{ value: "auto", label: "Auto" }];
+    let options = [{ value: "auto", label: this._l("Auto") }];
     if (this._draft.table === "coil") {
       options.push(
-        { value: "single", label: "0x05 Write Single Coil" },
-        { value: "multiple", label: "0x0F Write Multiple Coils" },
+        { value: "single", label: this._l("0x05 Write Single Coil") },
+        { value: "multiple", label: this._l("0x0F Write Multiple Coils") },
       );
     } else if (this._draft.table === "holding_register") {
-      if (this._draft.count === 1) options.push({ value: "single", label: "0x06 Write Single Register" });
-      options.push({ value: "multiple", label: "0x10 Write Multiple Registers" });
+      if (this._draft.count === 1) options.push({ value: "single", label: this._l("0x06 Write Single Register") });
+      options.push({ value: "multiple", label: this._l("0x10 Write Multiple Registers") });
     } else {
       return "";
     }
@@ -618,7 +735,7 @@ class UniversalModbusPanel extends HTMLElement {
 
 
   _precisionSelect() {
-    const options = [{ value: "", label: "None" }, ...[0, 1, 2, 3, 4, 5, 6].map((value) => ({ value, label: String(value) }))];
+    const options = [{ value: "", label: this._l("None") }, ...[0, 1, 2, 3, 4, 5, 6].map((value) => ({ value, label: String(value) }))];
     return `<div class="field"><label for="display_precision">${this._t("Displayed decimal places", "Angezeigte Dezimalstellen")}</label><select id="display_precision" name="display_precision">${options.map((item) => `<option value="${item.value}" ${String(this._draft.display_precision ?? "") === String(item.value) ? "selected" : ""}>${item.label}</option>`).join("")}</select></div>`;
   }
 
@@ -684,10 +801,10 @@ class UniversalModbusPanel extends HTMLElement {
       : "";
     const readOnlyPlatform = ["switch", "toggle_switch", "button", "number", "select"].includes(d.platform);
     const readOnly = readOnlyPlatform && d.writable === false;
-    const readOnlyField = readOnlyPlatform ? this._checkbox("read_only", "Read Only", readOnly) : "";
+    const readOnlyField = readOnlyPlatform ? this._checkbox("read_only", this._l("Read Only"), readOnly) : "";
     const writeModeField = readOnlyPlatform ? this._writeModeSelect() : "";
     const modbusDetails = `${readOnlyField}${writeModeField}${feedback ? `${this._field("feedback_register", this._t("Feedback register", "R\u00FCckmelderegister"), "number", 'min="0"')}${readOnlyPlatform ? this._checkbox("write_confirmation", this._t("Confirm write with immediate feedback", "Schreibvorgang sofort per R\u00FCckmeldung pr\u00FCfen"), d.write_confirmation ?? true) : ""}${switchLike ? `${this._field("command_on", this._t("On command", "Einschaltwert"), "number")}${this._field("command_off", this._t("Off command", "Ausschaltwert"), "number")}` : ""}` : ""}`;
-    const properties = `${this._select("platform", this._t("Entity type", "Entit\u00E4tstyp"), PLATFORMS)}${deviceClasses.length ? this._select("device_class", this._t("Device class", "Ger\u00E4teklasse"), deviceClasses, true) : ""}${d.platform === "sensor" && !hasOptions ? this._select("state_class", this._t("State class", "Zustandsklasse"), this._data.state_classes, true) : ""}${unitField}${this._iconField()}${analog && ["sensor", "number"].includes(d.platform) ? this._precisionSelect() : ""}${analog ? `${this._field("offset", "Offset", "number", 'step="any"')}${this._field("scale", this._t("Scale", "Skalierung"), "number", 'step="any"')}` : ""}${pulseLike ? this._field("pulse_ms", this._t("Pulse duration (ms)", "Impulsdauer (ms)"), "number", 'min="0"') : ""}${d.platform === "number" ? `${this._field("minimum", "Minimum", "number", 'step="any"')}${this._field("maximum", "Maximum", "number", 'step="any"')}${this._field("step", this._t("Step", "Schrittweite"), "number", 'step="any" min="0.000001"')}` : ""}${["sensor", "binary_sensor", "select"].includes(d.platform) && !coilSensor ? `<div class="field full"><label for="options_json">${this._t("Options as JSON", "Optionen als JSON")}</label><textarea id="options_json" name="options_json" rows="5">${this._escape(JSON.stringify(d.options || {}, null, 2))}</textarea></div>` : ""}`;
+    const properties = `${this._select("platform", this._t("Entity type", "Entit\u00E4tstyp"), PLATFORMS)}${deviceClasses.length ? this._select("device_class", this._t("Device class", "Ger\u00E4teklasse"), deviceClasses, true) : ""}${d.platform === "sensor" && !hasOptions ? this._select("state_class", this._t("State class", "Zustandsklasse"), this._data.state_classes, true) : ""}${unitField}${this._iconField()}${analog && ["sensor", "number"].includes(d.platform) ? this._precisionSelect() : ""}${analog ? `${this._field("offset", this._l("Offset"), "number", 'step="any"')}${this._field("scale", this._t("Scale", "Skalierung"), "number", 'step="any"')}` : ""}${pulseLike ? this._field("pulse_ms", this._t("Pulse duration (ms)", "Impulsdauer (ms)"), "number", 'min="0"') : ""}${d.platform === "number" ? `${this._field("minimum", this._l("Minimum"), "number", 'step="any"')}${this._field("maximum", this._l("Maximum"), "number", 'step="any"')}${this._field("step", this._t("Step", "Schrittweite"), "number", 'step="any" min="0.000001"')}` : ""}${["sensor", "binary_sensor", "select"].includes(d.platform) && !coilSensor ? `<div class="field full"><label for="options_json">${this._t("Options as JSON", "Optionen als JSON")}</label><textarea id="options_json" name="options_json" rows="5">${this._escape(JSON.stringify(d.options || {}, null, 2))}</textarea></div>` : ""}`;
     const formulaHelp = this._t(
       "Read formulas use register_value; write formulas use value. scale and offset are available in both. Supported: +, -, *, /, //, %, comparisons, if/else, abs, min, max, round, int, float, and bool. Examples: None if register_value == 65535 else register_value / 10; 100 if register_value > 0 else 0.",
       "Leseformeln verwenden register_value, Schreibformeln value. scale und offset stehen in beiden zur Verf\u00FCgung. Unterst\u00FCtzt: +, -, *, /, //, %, Vergleiche, if/else, abs, min, max, round, int, float und bool. Beispiele: None if register_value == 65535 else register_value / 10; 100 if register_value > 0 else 0."
@@ -699,7 +816,7 @@ class UniversalModbusPanel extends HTMLElement {
     const uniqueId = this._entryId || this._t("Generated when saved", "Wird beim Speichern erzeugt");
     const identity = `${this._field("name", this._t("Name", "Name"), "text", "required")}${this._readonlyField("key_preview", "key", d.key || this._t("Generated when saved", "Wird beim Speichern erzeugt"))}${this._readonlyField("unique_id", "unique_id", uniqueId)}<input name="key" type="hidden" value="${this._escape(d.key || "")}">`;
     const dialog = document.createElement("div"); dialog.className = "modal-backdrop";
-    dialog.innerHTML = `<div class="dialog"><h2>${this._editingIndex === null ? this._t("Add entity", "Entit\u00E4t hinzuf\u00FCgen") : this._t("Edit entity", "Entit\u00E4t bearbeiten")}</h2><form>${error ? `<div class="error">${this._escape(error)}</div>` : ""}<div class="grid">${identity}<section class="group"><h3 class="group-title">Modbus</h3><div class="group-grid">${this._field("unit_id", "Unit ID", "number", `min="0" max="${MAX_UNIT_ID}" placeholder="${this._t("Hub default", "Hub-Standard")}"`)}${this._field("scan_interval", this._t("Scan interval (s)", "Abfrageintervall (s)"), "number", `min="1" placeholder="${this._t("Hub default", "Hub-Standard")}"`)}${this._select("table", this._t("Register area", "Bereich"), TABLES)}${this._field("register", this._t("Register", "Register"), "number", 'min="0" required')}${this._select("data_type", this._t("Data type", "Datentyp"), dataTypes)}${this._select("feedback_table", this._t("Feedback source", "R\u00FCckmeldung"), TABLES, true)}${modbusDetails}</div></section><section class="group"><h3 class="group-title">${this._t("Properties", "Eigenschaften")}</h3><div class="group-grid">${properties}</div></section></div><div class="buttons"><button type="button" class="button secondary cancel">${this._t("Cancel", "Abbrechen")}</button><button type="submit" class="button primary">${this._t("Save", "Speichern")}</button></div></form></div>`;
+    dialog.innerHTML = `<div class="dialog"><h2>${this._editingIndex === null ? this._t("Add entity", "Entit\u00E4t hinzuf\u00FCgen") : this._t("Edit entity", "Entit\u00E4t bearbeiten")}</h2><form>${error ? `<div class="error">${this._escape(error)}</div>` : ""}<div class="grid">${identity}<section class="group"><h3 class="group-title">Modbus</h3><div class="group-grid">${this._field("unit_id", this._l("Unit ID"), "number", `min="0" max="${MAX_UNIT_ID}" placeholder="${this._t("Hub default", "Hub-Standard")}"`)}${this._field("scan_interval", this._t("Scan interval (s)", "Abfrageintervall (s)"), "number", `min="1" placeholder="${this._t("Hub default", "Hub-Standard")}"`)}${this._select("table", this._t("Register area", "Bereich"), TABLES)}${this._field("register", this._t("Register", "Register"), "number", 'min="0" required')}${this._select("data_type", this._t("Data type", "Datentyp"), dataTypes)}${this._select("feedback_table", this._t("Feedback source", "R\u00FCckmeldung"), TABLES, true)}${modbusDetails}</div></section><section class="group"><h3 class="group-title">${this._t("Properties", "Eigenschaften")}</h3><div class="group-grid">${properties}</div></section></div><div class="buttons"><button type="button" class="button secondary cancel">${this._t("Cancel", "Abbrechen")}</button><button type="submit" class="button primary">${this._t("Save", "Speichern")}</button></div></form></div>`;
     dialog.querySelector(".grid").insertAdjacentHTML("beforeend", advancedSection);
     this.shadowRoot.querySelector(".modal-backdrop")?.remove(); this.shadowRoot.appendChild(dialog);
     dialog.querySelector(".cancel").addEventListener("click", () => this._cancelEditor());
@@ -773,7 +890,7 @@ class UniversalModbusPanel extends HTMLElement {
   }
   async _delete(index) {
     const entity = this._entry.profile.entities[index];
-    if (!confirm(this._t(`Delete \u201C${entity.name}\u201D?`, `\u201E${entity.name}\u201C l\u00F6schen?`))) return;
+    if (!confirm(this._t(`Delete \u201C${entity.name}\u201D?`, `\u201E${entity.name}\u201C l\u00F6schen?`, `\u786E\u5B9A\u5220\u9664\u201C${entity.name}\u201D\u5417\uff1f`))) return;
     const profile = structuredClone(this._entry.profile); profile.entities.splice(index, 1);
     try { await this._saveProfile(profile); this._render(); } catch (err) { alert(err.message || String(err)); }
   }
@@ -814,7 +931,7 @@ class UniversalModbusPanel extends HTMLElement {
     return candidate;
   }
   _duplicateName(name, entities) {
-    const base = this._t(`${name} copy`, `${name} Kopie`);
+    const base = this._t(`${name} copy`, `${name} Kopie`, `${name} \u526F\u672C`);
     const names = new Set(entities.map((entity) => entity.name));
     if (!names.has(base)) return base;
     let suffix = 2;

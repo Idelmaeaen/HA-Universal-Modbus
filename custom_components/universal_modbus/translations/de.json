@@ -26,13 +26,51 @@
       "last_successful_update": {
         "name": "Letzte erfolgreiche Abfrage"
       }
+    },
+    "binary_sensor": {
+      "device_status": {
+        "name": "Gerätestatus",
+        "state": {
+          "on": "Kommunikation OK",
+          "off": "Gerät offline"
+        },
+        "state_attributes": {
+          "requests_sent": {
+            "name": "Anfragen gesendet"
+          },
+          "responses_received": {
+            "name": "Antworten empfangen"
+          },
+          "last_successful_update": {
+            "name": "Letzte erfolgreiche Kommunikation"
+          },
+          "host": {
+            "name": "IP-Adresse"
+          },
+          "port": {
+            "name": "Port"
+          },
+          "communication_ok": {
+            "name": "Kommunikation OK"
+          },
+          "last_error_time": {
+            "name": "Letzte Fehlerzeit"
+          },
+          "last_error": {
+            "name": "Letzte Fehlermeldung"
+          },
+          "communication_error_count": {
+            "name": "Kommunikationsfehler"
+          }
+        }
+      }
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Universal Modbus",
-        "description": "Hersteller: {manufacturer}\nModell: {model}\nBeschreibung: {description}\n\n[Diesen Hub in den Universal-Modbus-Einstellungen \u00f6ffnen](/universal-modbus?config_entry={config_entry}).",
+        "description": "Hersteller: {manufacturer}\nModell: {model}\nBeschreibung: {description}\n\n[Diesen Hub in den Universal-Modbus-Einstellungen öffnen](/universal-modbus?config_entry={config_entry}).",
         "menu_options": {
           "profile_info": "Profilinformationen bearbeiten",
           "manage_entities": "Entitäten bearbeiten",
@@ -235,6 +273,44 @@
     "abort": {
       "no_entities": "Es sind keine Entitäten konfiguriert.",
       "entity_not_found": "Die ausgewählte Entität existiert nicht mehr."
+    }
+  },
+  "services": {
+    "write_register": {
+      "name": "Register schreiben",
+      "description": "Einen oder mehrere Rohwerte in Holding-Register eines Universal-Modbus-Hubs schreiben. Ein einzelner Wert verwendet FC06 (Write Single Register), eine Liste FC16 (Write Multiple Registers). Es ist keine konfigurierte Entität erforderlich.",
+      "fields": {
+        "hub": {
+          "name": "Hub",
+          "description": "Hub-Name (z. B. light_modbus_hub) oder Konfigurationseintrags-ID."
+        },
+        "address": {
+          "name": "Adresse",
+          "description": "Startregisteradresse (0-65535)."
+        },
+        "slave": {
+          "name": "Slave",
+          "description": "Modbus-Unit-/Slave-ID (0-255). Standardmäßig die Unit-ID des Hubs."
+        },
+        "value": {
+          "name": "Wert",
+          "description": "Einzelwert (0-65535) oder Liste von Werten für aufeinanderfolgende Register."
+        }
+      }
+    },
+    "export_profile": {
+      "name": "Profil exportieren",
+      "description": "Das aktuelle Modbus-Entitätsprofil als wiederverwendbare JSON-Datei exportieren.",
+      "fields": {
+        "entry_id": {
+          "name": "Konfigurationseintrags-ID",
+          "description": "ID des Universal-Modbus-Konfigurationseintrags."
+        },
+        "filename": {
+          "name": "Dateiname",
+          "description": "Einfacher .json-Dateiname zum Speichern des Profils."
+        }
+      }
     }
   }
 }

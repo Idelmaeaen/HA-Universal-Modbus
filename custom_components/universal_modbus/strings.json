@@ -26,6 +26,44 @@
       "last_successful_update": {
         "name": "Last successful update"
       }
+    },
+    "binary_sensor": {
+      "device_status": {
+        "name": "Device status",
+        "state": {
+          "on": "Communication OK",
+          "off": "Device offline"
+        },
+        "state_attributes": {
+          "requests_sent": {
+            "name": "Requests sent"
+          },
+          "responses_received": {
+            "name": "Responses received"
+          },
+          "last_successful_update": {
+            "name": "Last successful communication"
+          },
+          "host": {
+            "name": "IP address"
+          },
+          "port": {
+            "name": "Port"
+          },
+          "communication_ok": {
+            "name": "Communication OK"
+          },
+          "last_error_time": {
+            "name": "Last error time"
+          },
+          "last_error": {
+            "name": "Last error message"
+          },
+          "communication_error_count": {
+            "name": "Communication errors"
+          }
+        }
+      }
     }
   },
   "options": {
@@ -235,6 +273,44 @@
     "abort": {
       "no_entities": "No entities are configured.",
       "entity_not_found": "The selected entity no longer exists."
+    }
+  },
+  "services": {
+    "write_register": {
+      "name": "Write register",
+      "description": "Write one or more raw values to holding registers on a Universal Modbus hub. A single value uses FC06 (Write Single Register); a list uses FC16 (Write Multiple Registers). No configured entity is required.",
+      "fields": {
+        "hub": {
+          "name": "Hub",
+          "description": "Hub name (e.g. light_modbus_hub) or config entry ID."
+        },
+        "address": {
+          "name": "Address",
+          "description": "Starting register address (0-65535)."
+        },
+        "slave": {
+          "name": "Slave",
+          "description": "Modbus unit/slave ID (0-255). Defaults to the hub's unit ID."
+        },
+        "value": {
+          "name": "Value",
+          "description": "A single value (0-65535) or a list of values for consecutive registers."
+        }
+      }
+    },
+    "export_profile": {
+      "name": "Export profile",
+      "description": "Export the current Modbus entity profile as a reusable JSON file.",
+      "fields": {
+        "entry_id": {
+          "name": "Config entry ID",
+          "description": "ID of the Universal Modbus config entry."
+        },
+        "filename": {
+          "name": "Filename",
+          "description": "Plain .json filename to save the profile to."
+        }
+      }
     }
   }
 }

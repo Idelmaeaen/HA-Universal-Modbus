@@ -6,16 +6,20 @@ from pathlib import Path
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
+import voluptuous as vol
 
 from .const import (
     CONF_ENTITIES,
     DOMAIN,
     PLATFORMS,
+    MAX_UNIT_ID,
     PROFILE_DIRECTORY,
     SERVICE_EXPORT_PROFILE,
+    SERVICE_WRITE_REGISTER,
 )
 from .coordinator import UniversalModbusCoordinator
 from .frontend import async_setup_frontend
@@ -45,6 +49,49 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         await hass.async_add_executor_job(target.write_text, payload, "utf-8")
 
     hass.services.async_register(DOMAIN, SERVICE_EXPORT_PROFILE, export_profile)
+
+    async def write_register(call: ServiceCall) -> None:
+        """Write raw values to holding registers on a Universal Modbus hub."""
+        hub_ref = call.data["hub"]
+        entry = next(
+            (
+                item
+                for item in hass.config_entries.async_entries(DOMAIN)
+                if item.entry_id == hub_ref or item.title == hub_ref
+            ),
+            None,
+        )
+        if entry is None:
+            raise HomeAssistantError(f"Unknown Universal Modbus hub: {hub_ref}")
+        coordinator = getattr(entry, "runtime_data", None)
+        if coordinator is None:
+            raise HomeAssistantError(f"Universal Modbus hub is not loaded: {hub_ref}")
+        await coordinator.async_write_registers_raw(
+            address=call.data["address"],
+            value=call.data["value"],
+            slave=call.data.get("slave"),
+        )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_WRITE_REGISTER,
+        write_register,
+        schema=vol.Schema(
+            {
+                vol.Required("hub"): str,
+                vol.Required("address"): vol.All(
+                    vol.Coerce(int), vol.Range(min=0, max=0xFFFF)
+                ),
+                vol.Optional("slave"): vol.All(
+                    vol.Coerce(int), vol.Range(min=0, max=MAX_UNIT_ID)
+                ),
+                vol.Required("value"): vol.Any(
+                    vol.All(vol.Coerce(int), vol.Range(min=0, max=0xFFFF)),
+                    [vol.All(vol.Coerce(int), vol.Range(min=0, max=0xFFFF))],
+                ),
+            }
+        ),
+    )
     await async_setup_frontend(hass)
     return True
 

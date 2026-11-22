@@ -13,6 +13,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 from pymodbus.client import ModbusTcpClient
@@ -32,6 +33,7 @@ from .const import (
     DEFAULT_SLAVE,
     DEFAULT_TIMEOUT,
     DOMAIN,
+    MAX_UNIT_ID,
 )
 from .helpers import modbus_device_parameter
 from .models import ModbusEntityDefinition
@@ -99,6 +101,10 @@ class UniversalModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.last_successful_update: datetime | None = None
         self.entity_errors: dict[str, str] = {}
         self.last_error: str | None = None
+        # Cumulative counters used by the diagnostic device-status binary sensor.
+        self.requests_sent = 0
+        self.responses_received = 0
+        self.last_error_time: datetime | None = None
 
         super().__init__(
             hass,
@@ -217,7 +223,7 @@ class UniversalModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self._ensure_connected()
             except Exception as err:
                 self.communication_error_count += 1
-                self.last_error = str(err)
+                self._set_last_error(str(err))
                 self.entity_errors = {item.key: str(err) for item in self.entities}
                 self._client.close()
                 raise
@@ -242,7 +248,7 @@ class UniversalModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             for key in updated:
                 self.entity_errors.pop(key, None)
             self.entity_errors.update(errors)
-            self.last_error = self._format_read_errors(self.entity_errors)
+            self._set_last_error(self._format_read_errors(self.entity_errors))
             if errors:
                 self.communication_error_count += 1
             if self.entities and len(self.entity_errors) == len(self.entities):
@@ -283,6 +289,18 @@ class UniversalModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             details.append(f"{definition.name} ({item.table}:{item.register}): {error}")
         return "; ".join(details)
 
+    def _record_exchange(self, response: Any) -> None:
+        """Count one Modbus request and, if it succeeded, its response."""
+        self.requests_sent += 1
+        if response is not None and not response.isError():
+            self.responses_received += 1
+
+    def _set_last_error(self, message: str | None) -> None:
+        """Store the current error message and stamp when it occurred."""
+        self.last_error = message
+        if message is not None:
+            self.last_error_time = dt_util.now()
+
     def _read_batch(self, batch: _ReadBatch) -> list[int]:
         """Read one batch and normalize registers or bits to integers."""
         device = {self._device_id_parameter: batch.unit_id}
@@ -305,6 +323,7 @@ class UniversalModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         else:
             raise ValueError(f"Unsupported Modbus table: {batch.table}")
 
+        self._record_exchange(response)
         if response.isError():
             raise RuntimeError(
                 f"Modbus read error at {batch.table}:{batch.register} "
@@ -314,6 +333,58 @@ class UniversalModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if batch.table in {"coil", "discrete_input"}:
             return [1 if bit else 0 for bit in response.bits[: batch.count]]
         return list(response.registers)
+
+    async def async_write_registers_raw(
+        self, address: int, value: Any, slave: int | None = None
+    ) -> None:
+        """Write raw values to holding registers, without any entity definition.
+
+        Exposed through the ``universal_modbus.write_register`` service so raw
+        Modbus commands can be sent from the Actions UI, mirroring the built-in
+        Modbus integration. ``value`` may be a single integer or a list of
+        integers; a single value uses FC06, a list uses FC16. ``slave`` overrides
+        the hub's configured unit ID for this write only.
+        """
+        values = list(value) if isinstance(value, (list, tuple)) else [value]
+        if not values:
+            raise ValueError("value must contain at least one register value")
+        if any(not isinstance(item, int) or isinstance(item, bool) for item in values):
+            raise ValueError("every register value must be an integer")
+        if any(not 0 <= item <= 0xFFFF for item in values):
+            raise ValueError("register values must be in the range 0..65535")
+        if not 0 <= address <= 0xFFFF:
+            raise ValueError("address must be in the range 0..65535")
+        unit = self._slave if slave is None else int(slave)
+        if not 0 <= unit <= MAX_UNIT_ID:
+            raise ValueError(f"slave must be in the range 0..{MAX_UNIT_ID}")
+        try:
+            await self.hass.async_add_executor_job(
+                self._write_registers_raw, address, values, unit
+            )
+        except Exception as err:
+            raise HomeAssistantError(
+                f"Modbus write failed at {address} (unit {unit}): {err}"
+            ) from err
+
+    def _write_registers_raw(self, address: int, values: list[int], unit: int) -> None:
+        """Perform the raw register write while holding the client lock."""
+        with self._client_lock:
+            try:
+                self._ensure_connected()
+                device = {self._device_id_parameter: unit}
+                response = (
+                    self._client.write_register(address, values[0], **device)
+                    if len(values) == 1
+                    else self._client.write_registers(address, values, **device)
+                )
+                self._record_exchange(response)
+                if response.isError():
+                    raise RuntimeError(
+                        f"Modbus write error at {address} (unit {unit}): {response}"
+                    )
+            except Exception:
+                self._client.close()
+                raise
 
     async def async_write_value(
         self, definition: ModbusEntityDefinition, value: Any
@@ -346,7 +417,7 @@ class UniversalModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     )
                 except Exception as err:
                     self.entity_errors[definition.key] = str(err)
-                    self.last_error = self._format_read_errors(self.entity_errors)
+                    self._set_last_error(self._format_read_errors(self.entity_errors))
                     self.communication_error_count += 1
                     self.async_update_listeners()
                     raise UpdateFailed(
@@ -359,7 +430,7 @@ class UniversalModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 value = bool(value)
 
             self.entity_errors.pop(definition.key, None)
-            self.last_error = self._format_read_errors(self.entity_errors)
+            self._set_last_error(self._format_read_errors(self.entity_errors))
             self.data = {**(self.data or {}), definition.key: value}
             self.async_update_listeners()
 
@@ -402,6 +473,7 @@ class UniversalModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         f"Table {definition.table} is read-only and cannot be written"
                     )
 
+                self._record_exchange(response)
                 if response.isError():
                     raise RuntimeError(
                         f"Modbus write error for {definition.key} at "

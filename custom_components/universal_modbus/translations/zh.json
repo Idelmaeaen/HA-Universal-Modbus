@@ -1,0 +1,316 @@
+{
+  "title": "Universal Modbus",
+  "config": {
+    "step": {
+      "user": {
+        "title": "添加 Modbus TCP 设备",
+        "data": {
+          "name": "设备名称",
+          "host": "主机地址",
+          "port": "端口",
+          "slave": "单元 ID",
+          "scan_interval": "扫描间隔",
+          "timeout": "超时时间"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_response_time_ms": {
+        "name": "响应时间"
+      },
+      "communication_error_count": {
+        "name": "通信错误数"
+      },
+      "last_successful_update": {
+        "name": "上次成功更新"
+      }
+    },
+    "binary_sensor": {
+      "device_status": {
+        "name": "设备状态",
+        "state": {
+          "on": "通讯正常",
+          "off": "设备离线"
+        },
+        "state_attributes": {
+          "requests_sent": {
+            "name": "发送次数"
+          },
+          "responses_received": {
+            "name": "收到次数"
+          },
+          "last_successful_update": {
+            "name": "上次通讯成功时间"
+          },
+          "host": {
+            "name": "设备 IP"
+          },
+          "port": {
+            "name": "端口"
+          },
+          "communication_ok": {
+            "name": "通讯是否正常"
+          },
+          "last_error_time": {
+            "name": "上次错误时间"
+          },
+          "last_error": {
+            "name": "上次错误信息"
+          },
+          "communication_error_count": {
+            "name": "通讯错误次数"
+          }
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Universal Modbus",
+        "description": "制造商：{manufacturer}\n型号：{model}\n描述：{description}\n\n[在 Universal Modbus 设置中打开此集线器](/universal-modbus?config_entry={config_entry})。",
+        "menu_options": {
+          "profile_info": "编辑配置档案信息",
+          "manage_entities": "管理实体",
+          "import_profile": "导入配置档案",
+          "export_profile": "导出配置档案"
+        }
+      },
+      "profile_info": {
+        "title": "配置档案信息",
+        "data": {
+          "profile_name": "配置档案名称",
+          "manufacturer": "制造商",
+          "model": "型号",
+          "description": "描述",
+          "byte_order": "集线器字节序",
+          "word_order": "集线器字序"
+        }
+      },
+      "manage_entities": {
+        "title": "管理实体",
+        "description": "已配置的实体：\n\n{entities}",
+        "menu_options": {
+          "add_entity": "添加实体",
+          "edit_entity_select": "编辑实体",
+          "delete_entity_select": "删除实体"
+        }
+      },
+      "add_entity": {
+        "title": "添加实体",
+        "description": "创建一个基于 Modbus 的 Home Assistant 实体。",
+        "data": {
+          "name": "名称",
+          "unit_id": "单元 ID（可选，默认使用集线器设置）",
+          "scan_interval": "扫描间隔（秒，可选，默认使用集线器设置）",
+          "platform": "实体类型",
+          "table": "寄存器区域",
+          "data_type": "数据类型",
+          "count": "寄存器数量",
+          "scale": "缩放系数",
+          "offset": "偏移量",
+          "advanced_calculation": "高级计算",
+          "read_formula": "读取公式",
+          "write_formula": "写入公式",
+          "unit": "单位",
+          "icon": "图标",
+          "display_precision": "显示的小数位数",
+          "device_class": "设备类别",
+          "state_class": "状态类别",
+          "feedback_table": "反馈来源",
+          "write_mode": "写入模式",
+          "command_on": "开启命令值",
+          "command_off": "关闭命令值",
+          "pulse_ms": "脉冲持续时间（毫秒）",
+          "minimum": "最小值",
+          "maximum": "最大值",
+          "step": "步长",
+          "options_json": "选项（JSON 格式）",
+          "register": "寄存器",
+          "feedback_register": "反馈寄存器"
+        }
+      },
+      "add_entity_details": {
+        "title": "实体详情",
+        "description": "仅显示与所选实体类型相关的字段。在上一步启用「高级计算」后即可使用公式。读取公式使用 register_value，写入公式使用 value，两者均可使用 scale 和 offset。示例：None if register_value == 65535 else register_value / 10。",
+        "data": {
+          "name": "名称",
+          "platform": "实体类型",
+          "table": "寄存器区域",
+          "data_type": "数据类型",
+          "count": "寄存器数量",
+          "scale": "缩放系数",
+          "offset": "偏移量",
+          "advanced_calculation": "高级计算",
+          "read_formula": "读取公式",
+          "write_formula": "写入公式",
+          "unit": "单位",
+          "icon": "图标",
+          "display_precision": "显示的小数位数",
+          "device_class": "设备类别",
+          "state_class": "状态类别",
+          "feedback_table": "反馈来源",
+          "write_confirmation": "通过即时反馈确认写入",
+          "write_mode": "写入模式",
+          "command_on": "开启命令值",
+          "command_off": "关闭命令值",
+          "pulse_ms": "脉冲持续时间（毫秒）",
+          "minimum": "最小值",
+          "maximum": "最大值",
+          "step": "步长",
+          "options_json": "选项（JSON 格式）",
+          "register": "寄存器",
+          "feedback_register": "反馈寄存器"
+        }
+      },
+      "edit_entity_select": {
+        "title": "选择实体",
+        "data": {
+          "entity_key": "实体"
+        }
+      },
+      "edit_entity": {
+        "title": "编辑实体",
+        "data": {
+          "name": "名称",
+          "unit_id": "单元 ID（可选，默认使用集线器设置）",
+          "scan_interval": "扫描间隔（秒，可选，默认使用集线器设置）",
+          "platform": "实体类型",
+          "table": "寄存器区域",
+          "data_type": "数据类型",
+          "count": "寄存器数量",
+          "scale": "缩放系数",
+          "offset": "偏移量",
+          "advanced_calculation": "高级计算",
+          "read_formula": "读取公式",
+          "write_formula": "写入公式",
+          "unit": "单位",
+          "icon": "图标",
+          "display_precision": "显示的小数位数",
+          "device_class": "设备类别",
+          "state_class": "状态类别",
+          "feedback_table": "反馈来源",
+          "write_mode": "写入模式",
+          "command_on": "开启命令值",
+          "command_off": "关闭命令值",
+          "pulse_ms": "脉冲持续时间（毫秒）",
+          "minimum": "最小值",
+          "maximum": "最大值",
+          "step": "步长",
+          "options_json": "选项（JSON 格式）",
+          "register": "寄存器",
+          "feedback_register": "反馈寄存器"
+        }
+      },
+      "edit_entity_details": {
+        "title": "编辑实体详情",
+        "description": "仅显示与所选实体类型相关的字段。在上一步启用「高级计算」后即可使用公式。读取公式使用 register_value，写入公式使用 value，两者均可使用 scale 和 offset。示例：None if register_value == 65535 else register_value / 10。",
+        "data": {
+          "name": "名称",
+          "platform": "实体类型",
+          "table": "寄存器区域",
+          "data_type": "数据类型",
+          "count": "寄存器数量",
+          "scale": "缩放系数",
+          "offset": "偏移量",
+          "advanced_calculation": "高级计算",
+          "read_formula": "读取公式",
+          "write_formula": "写入公式",
+          "unit": "单位",
+          "icon": "图标",
+          "display_precision": "显示的小数位数",
+          "device_class": "设备类别",
+          "state_class": "状态类别",
+          "feedback_table": "反馈来源",
+          "write_confirmation": "通过即时反馈确认写入",
+          "write_mode": "写入模式",
+          "command_on": "开启命令值",
+          "command_off": "关闭命令值",
+          "pulse_ms": "脉冲持续时间（毫秒）",
+          "minimum": "最小值",
+          "maximum": "最大值",
+          "step": "步长",
+          "options_json": "选项（JSON 格式）",
+          "register": "寄存器",
+          "feedback_register": "反馈寄存器"
+        }
+      },
+      "delete_entity_select": {
+        "title": "选择实体",
+        "data": {
+          "entity_key": "实体"
+        }
+      },
+      "delete_entity": {
+        "title": "删除实体",
+        "description": "确定删除 {entity} 吗？",
+        "data": {
+          "confirm": "确认删除"
+        }
+      },
+      "import_profile": {
+        "title": "导入配置档案",
+        "description": "粘贴完整的 JSON 配置档案。",
+        "data": {
+          "profile_json": "配置档案 JSON"
+        }
+      },
+      "export_profile": {
+        "title": "导出配置档案",
+        "description": "从此字段复制完整的 JSON 配置档案。",
+        "data": {
+          "profile_json": "配置档案 JSON"
+        }
+      }
+    },
+    "error": {
+      "invalid_profile": "配置档案无效，或使用了不受支持的架构版本。",
+      "invalid_entity": "实体定义无效。请检查平台特定的取值和 JSON 选项。",
+      "duplicate_key": "该唯一键已被占用。"
+    },
+    "abort": {
+      "no_entities": "尚未配置任何实体。",
+      "entity_not_found": "所选实体已不存在。"
+    }
+  },
+  "services": {
+    "write_register": {
+      "name": "写入寄存器",
+      "description": "向 Universal Modbus 集线器的保持寄存器写入一个或多个原始值。单个值使用 FC06（写单个寄存器），值列表使用 FC16（写多个寄存器）。无需预先配置实体。",
+      "fields": {
+        "hub": {
+          "name": "集线器",
+          "description": "集线器名称（如 light_modbus_hub）或配置条目 ID。"
+        },
+        "address": {
+          "name": "地址",
+          "description": "起始寄存器地址（0-65535）。"
+        },
+        "slave": {
+          "name": "从站",
+          "description": "Modbus 单元/从站 ID（0-255），默认为集线器的单元 ID。"
+        },
+        "value": {
+          "name": "值",
+          "description": "单个值（0-65535），或写入连续寄存器的值列表。"
+        }
+      }
+    },
+    "export_profile": {
+      "name": "导出配置档案",
+      "description": "将当前 Modbus 实体配置档案导出为可复用的 JSON 文件。",
+      "fields": {
+        "entry_id": {
+          "name": "配置条目 ID",
+          "description": "Universal Modbus 配置条目的 ID。"
+        },
+        "filename": {
+          "name": "文件名",
+          "description": "用于保存配置档案的 .json 文件名。"
+        }
+      }
+    }
+  }
+}

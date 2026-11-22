@@ -22,9 +22,12 @@ Universal Modbus is developed and maintained by **Edelmann Electronics**.
 - Configure scaling, offsets, byte order, and word order
 - Use safe per-entity read and write formulas for advanced calculations
 - Read a separate feedback register immediately to confirm a write
+- Write raw holding register values on demand with the `write_register` service
 - Display and control entity values directly in the sidebar
 - Import and export a complete hub
-- English and German UI translations
+- Per-hub diagnostic entities for response time, communication errors, last
+  successful poll, and device status
+- English, German, and Simplified Chinese UI translations
 
 The integration combines overlapping and adjacent reads that share a unit,
 register area, and scan interval. A request contains at most 125 registers or
@@ -275,12 +278,51 @@ effectively an administrator: besides formulas, `pulse_ms` can pause a write
 for an unrestricted, profile-defined duration. Only use profiles from trusted
 sources.
 
+## Services
+
+### Write register
+
+The `universal_modbus.write_register` service writes raw values to holding
+registers without a configured entity, similar to Home Assistant's built-in
+`modbus.write_register`. Run it from **Settings > Tools > Actions**, or call it
+from an automation or script:
+
+```yaml
+action: universal_modbus.write_register
+data:
+  hub: light_modbus_hub
+  address: 1
+  slave: 1
+  value: 1
+```
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `hub` | Yes | Hub name as shown in the integration, or its config entry ID. |
+| `address` | Yes | Starting holding register address (`0`–`65535`). |
+| `slave` | No | Modbus Unit ID (`0`–`255`). Defaults to the hub's Unit ID and applies only to this write. |
+| `value` | Yes | One value (`0`–`65535`) written with FC06, or a list of values written to consecutive registers with FC16. |
+
+The write goes straight to the register: it neither needs nor changes an
+entity's state. An explicit `slave` overrides the hub default only for that
+command. See the
+[service documentation](custom_components/universal_modbus/docs/write_register.md)
+for more examples.
+
 ## Error handling and diagnostics
 
 If one register read fails, the affected entity becomes unavailable while
 other valid entities continue updating. The sidebar shows the current error.
 Each hub also provides diagnostic entities for response time, communication
-error count, and the last successful poll.
+error count, and the last successful poll. These continuous diagnostics stay
+out of the Logbook, so polling does not flood the activity panel.
+
+Each hub also has a diagnostic device-status `binary_sensor`: it is on when
+communication succeeds and off when the device is offline. It stays available
+while offline so the fault state remains visible. Its attributes report
+`requests_sent`, `responses_received`, `last_successful_update`, `host`,
+`port`, `communication_ok`, `last_error_time`, `last_error`, and
+`communication_error_count`.
 
 ## Known limitations
 

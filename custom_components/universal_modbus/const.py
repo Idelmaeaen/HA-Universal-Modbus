@@ -22,3 +22,4 @@ PROFILE_SCHEMA_VERSION = 1
 PROFILE_DIRECTORY = "universal_modbus_profiles"
 SERVICE_EXPORT_PROFILE = "export_profile"
 SERVICE_IMPORT_PROFILE = "import_profile"
+SERVICE_WRITE_REGISTER = "write_register"

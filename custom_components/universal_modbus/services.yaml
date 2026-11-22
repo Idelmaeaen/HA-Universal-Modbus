@@ -1,3 +1,52 @@
+write_register:
+  name: Write register
+  description: >-
+    Write one or more raw values to holding registers on a Universal Modbus hub.
+    A single value uses FC06 (Write Single Register); a list of values uses FC16
+    (Write Multiple Registers). This sends the command directly and does not
+    change or require a configured entity.
+  fields:
+    hub:
+      name: Hub
+      description: >-
+        The Universal Modbus hub to write to. Accepts either the hub name shown
+        in the integration (for example light_modbus_hub) or its config entry ID.
+      required: true
+      example: light_modbus_hub
+      selector:
+        text:
+    address:
+      name: Address
+      description: Starting register address (0-65535).
+      required: true
+      example: 1
+      selector:
+        number:
+          min: 0
+          max: 65535
+          mode: box
+    slave:
+      name: Slave
+      description: >-
+        Modbus unit/slave ID (0-255). Optional; defaults to the hub's configured
+        unit ID. Use this to target a different device behind the same gateway.
+      required: false
+      example: 1
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    value:
+      name: Value
+      description: >-
+        A single register value (0-65535) or a list of values written to
+        consecutive registers starting at Address.
+      required: true
+      example: "[1, 2, 3, 4]"
+      selector:
+        object:
+
 export_profile:
   name: Export profile
   description: Export the current Modbus entity profile as a reusable JSON file.

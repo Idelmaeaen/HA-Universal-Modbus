@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.4.1 - 2026-11-22
+
+### Added
+
+- Added Simplified Chinese translations (`zh` and `zh-Hans`) for the config
+  flow, options flow, service descriptions, and diagnostic entities. The sidebar
+  editor is also fully localized in Chinese.
+- Added the `universal_modbus.write_register` service for writing one or more
+  raw values to holding registers from **Settings > Tools > Actions** or an
+  automation. A single value uses FC06 and a list uses FC16. The `hub` accepts
+  either the hub name or its config entry ID, and an optional `slave` overrides
+  the hub's default Unit ID for that write. See the
+  [service documentation](custom_components/universal_modbus/docs/write_register.md).
+- Added a diagnostic device-status `binary_sensor` for each hub. It is on when
+  communication succeeds and off when the device is offline, and exposes
+  request/response counters, the last successful update, host, port, last error
+  time and message, and the communication error count as attributes.
+
+### Changed
+
+- The `last_successful_update` diagnostic sensor no longer records every poll
+  in the Logbook. Its value, state class, and display are unchanged.
+
 ## 1.4.0 - 2026-11-21
 
 ### Added

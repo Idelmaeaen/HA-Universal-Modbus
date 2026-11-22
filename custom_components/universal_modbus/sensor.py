@@ -32,6 +32,14 @@ DIAGNOSTIC_SENSORS: tuple[SensorEntityDescription, ...] = (
         key="last_successful_update",
         translation_key="last_successful_update",
         device_class=SensorDeviceClass.TIMESTAMP,
+        # 和 last_response_time_ms 一样，让 HA 把本实体识别为「连续传感器」，
+        # 从而不再把每次轮询的时间戳变化写进「活动」(Logbook) 面板：
+        # logbook/helpers.py 的 is_sensor_continuous 只检查 state.attributes
+        # 里是否存在 unit_of_measurement 这个键，不校验其值，空字符串即可。
+        # TIMESTAMP 是非数值设备类，不能像响应时间那样用真实单位（会报
+        # ValueError），也不允许 state_class，所以用空单位达到同样效果。
+        # 实体、时间戳数据、图标、显示均不变。
+        native_unit_of_measurement="",
         icon="mdi:clock-check-outline",
     ),
 )

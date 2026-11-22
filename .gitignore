@@ -54,3 +54,6 @@ Desktop.ini
 # Codex/agent-local metadata
 .agents/
 .codex/
+
+# Agent workspace memory
+.workbuddy/
